@@ -3,27 +3,105 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - pharma</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/pharma.styles.css" asp-append-version="true" />
-</head>
-<body>
-    <div class="d-flex">
-        <div class="bg-light sidebar p-3">
-            <!-- Linkuri aici -->
-            <a href="@Url.Action("Index", "Client")">Clienți</a><br />
-            <a href="@Url.Action("Index", "Medicament")">Medicamente</a><br />
-            <a href="@Url.Action("Index", "Reteta")">Retete</a><br />
-        </div>
+    <title>@ViewData["Title"] - Farmacie</title>
 
-        <div class="flex-grow-1 p-3">
-            @RenderBody()
-        </div>
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body class="d-flex">
+    <!-- Sidebar -->
+    <div class="bg-dark text-white p-3" style="width: 260px; min-height: 100vh;">
+        <div class="h4 mb-4 text-center pb-2">Farmacia Universităţii</div>
+        <ul class="nav flex-column">
+            <!-- Acasă -->
+            <li class="nav-item mb-2">
+                <a class="nav-link fw-bold @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home"
+                            ? "active bg-secondary text-white"
+                            : "text-white")"
+                   href="@Url.Action("Index", "Home")">
+                    <i class="fas fa-home me-2"></i> Acasă
+                </a>
+            </li>
+            <!-- Separator ca list item -->
+            <li><hr class="bg-white my-2" /></li>
+            <!-- Pacienți -->
+            <li class="nav-item">
+                <div class="text-white fw-bold ms-2 mb-1">
+                    <i class="fas fa-user me-2"></i> Pacienți
+                </div>
+                <ul class="nav flex-column ms-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-white @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Pacient" ? "active bg-secondary" : "")"
+                           href="@Url.Action("Index", "Pacient")">
+                            <i class="fas fa-users me-2"></i> Lista pacienți
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white @(ViewContext.RouteData.Values["action"]?.ToString() == "Create" && ViewContext.RouteData.Values["controller"]?.ToString() == "Pacient" ? "active bg-secondary" : "")"
+                           href="@Url.Action("Create", "Pacient")">
+                            <i class="fas fa-user-plus me-2"></i> Adaugă pacient
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Medicamente -->
+            <li class="nav-item">
+                <div class="text-white fw-bold ms-2 mb-1">
+                    <i class="fas fa-pills me-2"></i> Medicamente
+                </div>
+                <ul class="nav flex-column ms-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-white @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Medicament" ? "active bg-secondary" : "")"
+                           href="@Url.Action("Index", "Medicament")">
+                            <i class="fas fa-capsules me-2"></i> Lista medicamente
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white @(ViewContext.RouteData.Values["action"]?.ToString() == "Create" && ViewContext.RouteData.Values["controller"]?.ToString() == "Medicament" ? "active bg-secondary" : "")"
+                           href="@Url.Action("Create", "Medicament")">
+                            <i class="fas fa-plus-square me-2"></i> Adaugă medicament
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Rețete 
+            <li class="nav-item">
+                <div class="text-white fw-bold ms-2 mb-1">
+                    <i class="fas fa-file-medical me-2"></i> Rețete
+                </div>
+                <ul class="nav flex-column ms-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-white @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Reteta" ? "active bg-secondary" : "")"
+                           href="@Url.Action("Index", "Reteta")">
+                            <i class="fas fa-list me-2"></i> Lista rețete
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white @(ViewContext.RouteData.Values["action"]?.ToString() == "Create" && ViewContext.RouteData.Values["controller"]?.ToString() == "Reteta" ? "active bg-secondary" : "")"
+                           href="@Url.Action("Create", "Reteta")">
+                            <i class="fas fa-file-medical-alt me-2"></i> Adaugă rețetă
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            -->
+
+        </ul>
+
     </div>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Main content -->
+    <main class="flex-grow-1 p-4 bg-light">
+        @RenderBody()
+    </main>
+
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
+
 </html>

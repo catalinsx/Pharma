@@ -4,19 +4,17 @@ using pharma.Models;
 
 namespace pharma.Controllers
 {
-    public class MedicamentController : Controller
+    public class PacientController : Controller
     {
-        private readonly PharmaContext _pharmaContext;
-
-        public MedicamentController(PharmaContext pharmaContext)
+        private PharmaContext _pharmaContext;
+        public PacientController(PharmaContext pharmaContext)
         {
             _pharmaContext = pharmaContext;
         }
-
         public IActionResult Index()
         {
-            var medicamente = _pharmaContext.Medicamente.ToList();
-            return View(medicamente);
+            var pacienti = _pharmaContext.Pacienti.ToList();
+            return View(pacienti);
         }
 
         [HttpGet]
@@ -26,17 +24,17 @@ namespace pharma.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(Medicament medicament)
+        public IActionResult Create(Pacient pacient)
         {
             if (ModelState.IsValid)
             {
-                _pharmaContext.Medicamente.Add(medicament);
+                _pharmaContext.Pacienti.Add(pacient);
                 _pharmaContext.SaveChanges();
 
                 return RedirectToAction("Index");
-
             }
-            return View(medicament);
+           
+            return View(pacient);
         }
     }
 }

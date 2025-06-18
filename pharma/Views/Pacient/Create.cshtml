@@ -1,0 +1,27 @@
+﻿@model pharma.Models.Pacient
+
+@{
+    ViewData["Title"] = "Adaugă pacient";
+}
+
+<h2 class="mb-4">Adaugă pacient</h2>
+
+<form asp-action="Create" method="post">
+    <div class="mb-3">
+        <label asp-for="Nume" class="form-label"></label>
+        <input asp-for="Nume" class="form-control" />
+        <span asp-validation-for="Nume" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Prenume" class="form-label"></label>
+        <input asp-for="Prenume" class="form-control" />
+        <span asp-validation-for="Prenume" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Salvează</button>
+    <a asp-action="Index" class="btn btn-secondary">Renunță</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -7,7 +7,7 @@ namespace pharma.Data
     {
         public PharmaContext(DbContextOptions<PharmaContext> options) : base(options) { }
 
-        public DbSet<Client> Clienti { get; set; }
+        public DbSet<Pacient> Pacienti { get; set; }
         public DbSet<Medicament> Medicamente { get; set; }
         public DbSet<Reteta> Retete { get; set; }
 

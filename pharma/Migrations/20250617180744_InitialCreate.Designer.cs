@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using pharma.Data;
 
@@ -11,9 +12,11 @@ using pharma.Data;
 namespace pharma.Migrations
 {
     [DbContext(typeof(PharmaContext))]
-    partial class PharmaContextModelSnapshot : ModelSnapshot
+    [Migration("20250617180744_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,7 +34,6 @@ namespace pharma.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Nume")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -47,15 +49,10 @@ namespace pharma.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("DataUrmatoareiVizite")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Nume")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Prenume")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -74,10 +71,7 @@ namespace pharma.Migrations
                     b.Property<DateTime>("Data")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DataUrmatoareiVizite")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MedicamentId")
+                    b.Property<int?>("MedicamentId")
                         .HasColumnType("int");
 
                     b.Property<string>("NrReteta")
@@ -103,19 +97,15 @@ namespace pharma.Migrations
 
             modelBuilder.Entity("pharma.Models.Reteta", b =>
                 {
-                    b.HasOne("pharma.Models.Medicament", "medicament")
+                    b.HasOne("pharma.Models.Medicament", null)
                         .WithMany("Retete")
-                        .HasForeignKey("MedicamentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("MedicamentId");
 
                     b.HasOne("pharma.Models.Pacient", "pacient")
                         .WithMany("Retete")
                         .HasForeignKey("PacientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("medicament");
 
                     b.Navigation("pacient");
                 });
