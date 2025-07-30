@@ -31,7 +31,7 @@ namespace pharma.Controllers
                 _pharmaContext.Pacienti.Add(pacient);
                 _pharmaContext.SaveChanges();
 
-                return RedirectToAction("Index");
+                // gen sa adaug un mesaj de succes
             }
            
             return View(pacient);

@@ -4,36 +4,94 @@
     ViewData["Title"] = "Lista medicamente";
 }
 
-<div class="row">
+<form asp-action="Index" method="get" class="mb-4">
+    <div class="row justify-content-center mb-4">
+        <div class="col-12 col-md-6">
+            <input type="text" id="searchInput" class="form-control" placeholder="Caută medicament..." />
+        </div>
+    </div>
+</form>
+
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
     @foreach (var med in Model)
     {
-        <div class="col-md-3 mb-4">
-            <div class="card medicament-card text-white position-relative" data-nume="@med.Nume">
-                <div class="dropdown position-absolute top-0 end-0 m-2">
-                    <a class="text-white fs-5" href="#" role="button" data-bs-toggle="dropdown">
+        <div class="col">
+            <div class="card medicament-card text-white position-relative p-2" data-nume="@med.Nume" style="cursor:pointer;">
+                <!-- Dropdown Edit/Delete -->
+                <div class="dropdown position-absolute top-0 end-0 m-2" style="z-index:1000;">
+                    <button class="btn med-dropdown-btn" type="button" id="ddMenu_@med.Id" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-ellipsis-v"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ddMenu_@med.Id">
                         <li>
-                            <a class="dropdown-item" asp-action="Edit" asp-route-id="@med.Id">
-                                <i class="fas fa-pen me-2 text-primary"></i> Editează
-                            </a>
+                            <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editModal_@med.Id">
+                                <i class="fas fa-edit me-1"></i> Editează nume
+                            </button>
                         </li>
                         <li>
-                            <a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@med.Id">
-                                <i class="fas fa-trash me-2"></i> Șterge
-                            </a>
+                            <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteModal_@med.Id">
+                                <i class="fas fa-trash-alt me-1"></i> Șterge
+                            </button>
                         </li>
                     </ul>
                 </div>
 
-                <div class="card-body d-flex flex-column justify-content-center align-items-center" style="height: 200px;">
-                    <h1 class="display-3 fw-bold">
-                        @med.Nume.Substring(0, 2)
-                    </h1>
+                <a asp-action="Details" asp-route-id="@med.Id" class="text-white text-decoration-none d-block">
+                    <div class="card-body d-flex justify-content-center align-items-center p-3" style="height:150px;">
+                        <h2 class="display-5 fw-bold mb-0">@med.Nume.Substring(0, 2)</h2>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 text-center fw-semibold p-1">
+                        @med.Nume
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Edit Modal -->
+        <div class="modal fade" id="editModal_@med.Id" tabindex="-1" aria-labelledby="editModalLabel_@med.Id" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editModalLabel_@med.Id">Editează nume</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Închide"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form asp-action="Edit" asp-controller="Medicament" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Id" value="@med.Id" />
+                            <div class="mb-3">
+                                <label for="Nume_@med.Id" class="form-label">Nume medicament</label>
+                                <input type="text" id="Nume_@med.Id" name="Nume" class="form-control" value="@med.Nume" required />
+                            </div>
+                            <div class="text-end">
+                                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Anulează</button>
+                                <button type="submit" class="btn btn-primary">Salvează</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div class="card-footer text-center fw-semibold bg-transparent border-0">
-                    @med.Nume
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteModal_@med.Id" tabindex="-1" aria-labelledby="deleteModalLabel_@med.Id" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel_@med.Id">Confirmare ștergere</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Închide"></button>
+                    </div>
+                    <div class="modal-body">
+                        Sigur vrei să ștergi medicamentul „<strong>@med.Nume</strong>”? Această acțiune nu poate fi anulată.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                        <form asp-action="Delete" asp-controller="Medicament" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Id" value="@med.Id" />
+                            <button type="submit" class="btn btn-danger">Șterge</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -43,33 +101,59 @@
 <style>
     .medicament-card {
         border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        transition: transform 0.2s ease-in-out;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: transform 0.2s ease;
     }
 
-    .medicament-card:hover {
-        transform: scale(1.03);
-     }
+        .medicament-card:hover {
+            transform: scale(1.02);
+        }
 
-    .dropdown-menu {
-        min-width: 160px;
+    .med-dropdown-btn {
+        background: rgba(255,255,255,0.3);
+        border: none;
+        border-radius: 0.25rem;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    }
+
+        .med-dropdown-btn:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+    .medicament-card .dropdown-menu {
+        min-width: 8rem;
     }
 
     .dropdown-item i {
-        width: 20px;
+        width: 1rem;
+        margin-right: 0.5rem;
     }
 </style>
 
-<script>
-    const colors = ["#007BFF", "#28A745", "#FFC107", "#DC3545", "#6F42C1", "#20C997", "#E83E8C", "#6610f2"];
-
-    document.querySelectorAll('.medicament-card').forEach(card => {
-        const nume = card.dataset.nume;
-        let hash = 0;
-        for (let i = 0; i < nume.length; i++) {
-            hash = nume.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        const index = Math.abs(hash) % colors.length;
-        card.style.backgroundColor = colors[index];
-    });
-</script>
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Apply random background
+            const colors = ["#007BFF", "#28A745", "#FFC107", "#DC3545", "#6F42C1", "#20C997", "#E83E8C", "#6610f2"];
+            document.querySelectorAll('.medicament-card').forEach(card => {
+                const name = card.dataset.nume;
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                card.style.backgroundColor = colors[Math.abs(hash) % colors.length];
+            });
+            // Search/filter
+            document.getElementById('searchInput').addEventListener('input', function () {
+                const term = this.value.trim().toLowerCase();
+                document.querySelectorAll('.medicament-card').forEach(card => {
+                    const show = card.dataset.nume.toLowerCase().includes(term);
+                    card.closest('.col').classList.toggle('d-none', !show);
+                });
+            });
+        });
+    </script>
+}

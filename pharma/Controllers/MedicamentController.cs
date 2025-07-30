@@ -13,10 +13,17 @@ namespace pharma.Controllers
             _pharmaContext = pharmaContext;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(string? search)
         {
-            var medicamente = _pharmaContext.Medicamente.ToList();
-            return View(medicamente);
+            var medicamente = _pharmaContext.Medicamente.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                medicamente = medicamente.Where(m => m.Nume.Contains(search));
+            }
+
+            var rezultate = medicamente.OrderBy(m => m.Nume).ToList();
+            return View(rezultate);
         }
 
         [HttpGet]
@@ -33,9 +40,18 @@ namespace pharma.Controllers
                 _pharmaContext.Medicamente.Add(medicament);
                 _pharmaContext.SaveChanges();
 
-                return RedirectToAction("Index");
+              //  return RedirectToAction("Index");
 
             }
+            return View(medicament);
+        }
+
+        public IActionResult Details(int id)
+        {
+            var medicament = _pharmaContext.Medicamente.FirstOrDefault(m => m.Id == id);
+            if (medicament == null)
+                return NotFound();
+
             return View(medicament);
         }
     }

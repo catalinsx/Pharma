@@ -19,6 +19,7 @@ html {
 
 body {
   margin-bottom: 60px;
+  overflow-y: scroll;
 }
 
 .rotate-icon {
@@ -37,4 +38,69 @@ body {
 
 .medicament-card:hover {
      transform: scale(1.03);
+}
+
+:root {
+    --sidebar-bg: #2C3E50;
+    --sidebar-text: #ECF0F1;
+    --sidebar-hover: rgba(236, 240, 241, 0.1);
+    --sidebar-accent: #1ABC9C;
+}
+
+.sidebar {
+    background: var(--sidebar-bg) !important;
+    width: 260px;
+    height: 100%;
+    overflow-y: auto;
+    padding-top: 1rem;
+}
+
+.sidebar-header {
+    padding: 1rem 0;
+    text-align: center;
+    border-bottom: 1px solid rgba(236, 240, 241, 0.2);
+}
+
+.sidebar .section-title {
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    color: rgba(236, 240, 241, 0.7);
+}
+
+.sidebar .nav-link {
+    display: block;
+    color: var(--sidebar-text) !important;
+    padding: 0.75rem 1rem;
+    margin: 0.25rem 0.5rem;
+    width: calc(100% - 1rem);
+    transition: background 0.2s, padding-left 0.2s, margin 0.2s;
+    position: relative;
+    border-radius: 0.5rem;
+}
+
+.sidebar .nav-link:hover {
+        background: var(--sidebar-hover) !important;
+        padding-left: 1.5rem;
+        /* keep same margin to constrain hover shape */
+}
+
+.sidebar .nav-link.active {
+        background: var(--sidebar-accent) !important;
+        color: #fff !important;
+        /* margin intact for active state */
+}
+
+.sidebar .nav-link.active::before {
+            content: "";
+            position: absolute;
+            left: -0.5rem;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: #16A085;
+            border-top-left-radius: 0.5rem;
+            border-bottom-left-radius: 0.5rem;
 }
