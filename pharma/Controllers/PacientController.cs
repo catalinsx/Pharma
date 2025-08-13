@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using pharma.Data;
 using pharma.Models;
+using System.Globalization;
 
 namespace pharma.Controllers
 {
@@ -13,15 +14,27 @@ namespace pharma.Controllers
             _pharmaContext = pharmaContext;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(string? search)
         {
             var pacienti = _pharmaContext.Pacienti
                 .Include(p => p.PacientMedicamente)
                 .ThenInclude(pm => pm.Medicament)
                 .Include(p => p.Retete)
                 .ThenInclude(r => r.medicament)
-                .ToList();
-            return View(pacienti);
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.ToLower();
+                pacienti = pacienti.Where(p =>
+                    p.Nume.ToLower().Contains(search) ||
+                    p.Prenume.ToLower().Contains(search) ||
+                    (p.CNP != null && p.CNP.Contains(search)) ||
+                    (p.NrTelefon != null && p.NrTelefon.Contains(search)));
+            }
+
+            var rezultate = pacienti.OrderBy(p => p.Nume).ThenBy(p => p.Prenume).ToList();
+            return View(rezultate);
         }
 
         [HttpGet]
@@ -34,16 +47,63 @@ namespace pharma.Controllers
             return View(viewModel);
         }
 
+        private string CapitalizeFirstLetter(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(input.ToLower());
+        }
+
+        private bool PacientExists(string nume, string prenume, string? cnp, int excludeId = 0)
+        {
+            var query = _pharmaContext.Pacienti
+                .Where(p => p.Id != excludeId &&
+                           p.Nume.ToLower() == nume.ToLower() &&
+                           p.Prenume.ToLower() == prenume.ToLower());
+
+            // If CNP is provided, check for exact match
+            if (!string.IsNullOrWhiteSpace(cnp))
+            {
+                return query.Any(p => p.CNP == cnp);
+            }
+
+            // If no CNP provided, check if there's already a patient with same name
+            return query.Any();
+        }
+
         [HttpPost]
         public IActionResult Create(PacientCreateViewModel model)
         {
             if (ModelState.IsValid)
             {
+                // Normalize names
+                model.Nume = CapitalizeFirstLetter(model.Nume.Trim());
+                model.Prenume = CapitalizeFirstLetter(model.Prenume.Trim());
+
+                // Check for duplicates
+                if (PacientExists(model.Nume, model.Prenume, model.CNP))
+                {
+                    if (!string.IsNullOrWhiteSpace(model.CNP))
+                    {
+                        ModelState.AddModelError("CNP", "Există deja un pacient cu același nume și CNP!");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("Nume", "Există deja un pacient cu același nume și prenume. Adăugați CNP-ul pentru diferențiere.");
+                    }
+                    model.AvailableMedicamente = _pharmaContext.Medicamente.OrderBy(m => m.Nume).ToList();
+                    return View(model);
+                }
+
                 // Create the patient
                 var pacient = new Pacient
                 {
                     Nume = model.Nume,
-                    Prenume = model.Prenume
+                    Prenume = model.Prenume,
+                    CNP = string.IsNullOrWhiteSpace(model.CNP) ? null : model.CNP.Trim(),
+                    NrTelefon = string.IsNullOrWhiteSpace(model.NrTelefon) ? null : model.NrTelefon.Trim(),
+                    AlteDetalii = string.IsNullOrWhiteSpace(model.AlteDetalii) ? null : model.AlteDetalii.Trim()
                 };
 
                 _pharmaContext.Pacienti.Add(pacient);
@@ -87,6 +147,9 @@ namespace pharma.Controllers
                 Id = pacient.Id,
                 Nume = pacient.Nume,
                 Prenume = pacient.Prenume,
+                CNP = pacient.CNP,
+                NrTelefon = pacient.NrTelefon,
+                AlteDetalii = pacient.AlteDetalii,
                 SelectedMedicamentIds = pacient.PacientMedicamente.Select(pm => pm.MedicamentId).ToList(),
                 AvailableMedicamente = _pharmaContext.Medicamente.OrderBy(m => m.Nume).ToList()
             };
@@ -106,9 +169,31 @@ namespace pharma.Controllers
                 if (pacient == null)
                     return NotFound();
 
+                // Normalize names
+                model.Nume = CapitalizeFirstLetter(model.Nume.Trim());
+                model.Prenume = CapitalizeFirstLetter(model.Prenume.Trim());
+
+                // Check for duplicates (excluding current patient)
+                if (PacientExists(model.Nume, model.Prenume, model.CNP, model.Id))
+                {
+                    if (!string.IsNullOrWhiteSpace(model.CNP))
+                    {
+                        ModelState.AddModelError("CNP", "Există deja un alt pacient cu același nume și CNP!");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("Nume", "Există deja un alt pacient cu același nume și prenume. Adăugați CNP-ul pentru diferențiere.");
+                    }
+                    model.AvailableMedicamente = _pharmaContext.Medicamente.OrderBy(m => m.Nume).ToList();
+                    return View(model);
+                }
+
                 // Update basic info
                 pacient.Nume = model.Nume;
                 pacient.Prenume = model.Prenume;
+                pacient.CNP = string.IsNullOrWhiteSpace(model.CNP) ? null : model.CNP.Trim();
+                pacient.NrTelefon = string.IsNullOrWhiteSpace(model.NrTelefon) ? null : model.NrTelefon.Trim();
+                pacient.AlteDetalii = string.IsNullOrWhiteSpace(model.AlteDetalii) ? null : model.AlteDetalii.Trim();
 
                 // Remove existing medicine associations
                 _pharmaContext.PacientMedicamente.RemoveRange(pacient.PacientMedicamente);
@@ -136,7 +221,7 @@ namespace pharma.Controllers
         }
 
         [HttpGet]
-        public IActionResult Details(int id)
+        public IActionResult GetDetails(int id)
         {
             var pacient = _pharmaContext.Pacienti
                 .Include(p => p.PacientMedicamente)
@@ -148,7 +233,29 @@ namespace pharma.Controllers
             if (pacient == null)
                 return NotFound();
 
-            return View(pacient);
+            return Json(new
+            {
+                id = pacient.Id,
+                nume = pacient.Nume,
+                prenume = pacient.Prenume,
+                cnp = pacient.CNP,
+                nrTelefon = pacient.NrTelefon,
+                alteDetalii = pacient.AlteDetalii,
+                medicamente = pacient.PacientMedicamente.Select(pm => new
+                {
+                    id = pm.Medicament.Id,
+                    nume = pm.Medicament.Nume
+                }).ToList(),
+                retete = pacient.Retete.Select(r => new
+                {
+                    id = r.Id,
+                    data = r.Data.ToString("dd.MM.yyyy"),
+                    medicament = r.medicament?.Nume,
+                    serie = r.Serie,
+                    nrReteta = r.NrReteta,
+                    dataUrmatoareiVizite = r.DataUrmatoareiVizite?.ToString("dd.MM.yyyy")
+                }).OrderByDescending(r => r.data).ToList()
+            });
         }
 
         [HttpPost]

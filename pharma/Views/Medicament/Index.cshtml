@@ -4,93 +4,215 @@
     ViewData["Title"] = "Lista medicamente";
 }
 
-<form asp-action="Index" method="get" class="mb-4">
-    <div class="row justify-content-center mb-4">
-        <div class="col-12 col-md-6">
-            <input type="text" id="searchInput" class="form-control" placeholder="Caută medicament..." />
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">
+            <i class="fas fa-pills me-2 text-primary"></i>
+            Medicamente
+        </h2>
+        <p class="text-muted mb-0">@Model.Count() medicamente înregistrate</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary btn-lg">
+        <i class="fas fa-plus me-2"></i> Adaugă medicament
+    </a>
+</div>
+
+<!-- Search and View Toggle -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="searchInput" class="form-control" 
+                           placeholder="Caută medicament..." 
+                           autocomplete="off">
+                </div>
+            </div>
+            <div class="col-md-3 mt-2 mt-md-0">
+                <select id="sortSelect" class="form-select form-select-lg">
+                    <option value="alphabetical">Alfabetic (A-Z)</option>
+                    <option value="alphabetical-desc">Alfabetic (Z-A)</option>
+                    <option value="most-patients">Cei mai mulți pacienți</option>
+                    <option value="most-prescriptions">Cele mai multe rețete</option>
+                    <option value="recent">Adăugate recent</option>
+                </select>
+            </div>
+            <div class="col-md-3 mt-2 mt-md-0">
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="viewMode" id="gridView" value="grid" checked>
+                    <label class="btn btn-outline-secondary" for="gridView">
+                        <i class="fas fa-th-large"></i> Grid
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="viewMode" id="listView" value="list">
+                    <label class="btn btn-outline-secondary" for="listView">
+                        <i class="fas fa-list"></i> Listă
+                    </label>
+                </div>
+            </div>
         </div>
     </div>
-</form>
+</div>
 
-<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+<!-- Grid View -->
+<div id="gridViewContainer" class="row g-3">
     @foreach (var med in Model)
     {
-        <div class="col">
-            <div class="card medicament-card text-white position-relative p-2" data-nume="@med.Nume" style="cursor:pointer;">
-                <!-- Dropdown Edit/Delete -->
-                <div class="dropdown position-absolute top-0 end-0 m-2" style="z-index:1000;">
-                    <button class="btn med-dropdown-btn" type="button" id="ddMenu_@med.Id" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ddMenu_@med.Id">
-                        <li>
-                            <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editModal_@med.Id">
-                                <i class="fas fa-edit me-1"></i> Editează nume
-                            </button>
-                        </li>
-                        <li>
-                            <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteModal_@med.Id">
-                                <i class="fas fa-trash-alt me-1"></i> Șterge
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-
-                <a asp-action="Details" asp-route-id="@med.Id" class="text-white text-decoration-none d-block">
-                    <div class="card-body d-flex justify-content-center align-items-center p-3" style="height:150px;">
-                        <h2 class="display-5 fw-bold mb-0">@med.Nume.Substring(0, 2)</h2>
+       
+            var numarPacienti = med.PacientMedicamente?.Count ?? 0;
+            var numarRetete = med.Retete?.Count ?? 0;
+        
+        
+        <div class="col-xl-3 col-lg-4 col-md-6 medicament-card" 
+             data-id="@med.Id"
+             data-nume="@med.Nume.ToLower()"
+             data-pacienti="@numarPacienti"
+             data-retete="@numarRetete">
+            
+            <div class="card medicament-grid-card h-100">
+                <!-- Card Header with Actions -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="medicament-icon">
+                        <span class="icon-circle">
+                            @med.Nume.Substring(0, Math.Min(2, med.Nume.Length)).ToUpper()
+                        </span>
                     </div>
-                    <div class="card-footer bg-transparent border-0 text-center fw-semibold p-1">
-                        @med.Nume
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <!-- Edit Modal -->
-        <div class="modal fade" id="editModal_@med.Id" tabindex="-1" aria-labelledby="editModalLabel_@med.Id" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editModalLabel_@med.Id">Editează nume</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Închide"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form asp-action="Edit" asp-controller="Medicament" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="Id" value="@med.Id" />
-                            <div class="mb-3">
-                                <label for="Nume_@med.Id" class="form-label">Nume medicament</label>
-                                <input type="text" id="Nume_@med.Id" name="Nume" class="form-control" value="@med.Nume" required />
-                            </div>
-                            <div class="text-end">
-                                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Anulează</button>
-                                <button type="submit" class="btn btn-primary">Salvează</button>
-                            </div>
-                        </form>
+                    <div class="dropdown">
+                        <button class="btn btn-link btn-sm text-muted" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" asp-action="Details" asp-route-id="@med.Id">
+                                    <i class="fas fa-eye me-2"></i>Vezi detalii
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-action="Edit" asp-route-id="@med.Id">
+                                    <i class="fas fa-edit me-2"></i>Editează
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-action="ManagePatients" asp-route-id="@med.Id">
+                                    <i class="fas fa-users me-2"></i>Gestionează pacienții
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <button class="dropdown-item text-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal_@med.Id">
+                                    <i class="fas fa-trash me-2"></i>Șterge
+                                </button>
+                            </li>
+                        </ul>
                     </div>
                 </div>
+                
+                <!-- Card Body -->
+                <div class="card-body text-center">
+                    <h5 class="card-title mb-3">@med.Nume</h5>
+                    
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <div class="stat-box">
+                                <div class="stat-number text-primary">@numarPacienti</div>
+                                <div class="stat-label">Pacienți</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-box">
+                                <div class="stat-number text-success">@numarRetete</div>
+                                <div class="stat-label">Rețete</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Footer -->
+                <div class="card-footer bg-transparent">
+                    <div class="d-grid gap-2">
+                        <a asp-action="Details" asp-route-id="@med.Id" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i> Vezi detalii
+                        </a>
+                        @if (numarPacienti > 0)
+                        {
+                            <a asp-controller="Reteta" asp-action="Create" asp-route-medId="@med.Id"
+                               class="btn btn-success btn-sm">
+                                <i class="fas fa-file-medical me-1"></i> Rețetă nouă
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-action="ManagePatients" asp-route-id="@med.Id"
+                               class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-user-plus me-1"></i> Adaugă pacienți
+                            </a>
+                        }
+                    </div>
+                </div>
             </div>
         </div>
-
+        
         <!-- Delete Modal -->
-        <div class="modal fade" id="deleteModal_@med.Id" tabindex="-1" aria-labelledby="deleteModalLabel_@med.Id" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
+        <div class="modal fade" id="deleteModal_@med.Id" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="deleteModalLabel_@med.Id">Confirmare ștergere</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Închide"></button>
+                        <h5 class="modal-title text-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Confirmare ștergere
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        Sigur vrei să ștergi medicamentul „<strong>@med.Nume</strong>”? Această acțiune nu poate fi anulată.
+                        <p>Vrei să ștergi definitiv medicamentul <strong>@med.Nume</strong>?</p>
+                        
+                        @if (numarRetete > 0)
+                        {
+                            <div class="alert alert-danger">
+                                <i class="fas fa-times-circle me-2"></i>
+                                <strong>Nu se poate șterge!</strong><br>
+                                Medicamentul are @numarRetete rețete asociate.
+                            </div>
+                        }
+                        else if (numarPacienti > 0)
+                        {
+                            <div class="alert alert-warning">
+                                <strong>Atenție!</strong> Această acțiune va elimina și:
+                                <ul class="mb-0 mt-2">
+                                    <li>@numarPacienti asocieri cu pacienții</li>
+                                </ul>
+                            </div>
+                        }
+                        
+                        @if (numarRetete == 0)
+                        {
+                            <p class="text-danger"><strong>Această acțiune nu poate fi anulată!</strong></p>
+                        }
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
-                        <form asp-action="Delete" asp-controller="Medicament" method="post" class="d-inline">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="Id" value="@med.Id" />
-                            <button type="submit" class="btn btn-danger">Șterge</button>
-                        </form>
+                        @if (numarRetete == 0)
+                        {
+                            <form asp-action="Delete" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@med.Id" />
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash me-1"></i> Șterge definitiv
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-danger" disabled>
+                                <i class="fas fa-lock me-1"></i> Nu se poate șterge
+                            </button>
+                        }
                     </div>
                 </div>
             </div>
@@ -98,62 +220,323 @@
     }
 </div>
 
-<style>
-    .medicament-card {
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transition: transform 0.2s ease;
-    }
+<!-- List View -->
+<div id="listViewContainer" class="d-none">
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th width="40%">Medicament</th>
+                        <th width="15%" class="text-center">Pacienți</th>
+                        <th width="15%" class="text-center">Rețete</th>
+                        <th width="20%">Status</th>
+                        <th width="10%" class="text-center">Acțiuni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var med in Model)
+                    {
+                        
+                            var numarPacienti = med.PacientMedicamente?.Count ?? 0;
+                            var numarRetete = med.Retete?.Count ?? 0;
+                     
+                        
+                        <tr class="medicament-list-row" 
+                            data-id="@med.Id"
+                            data-nume="@med.Nume.ToLower()"
+                            data-pacienti="@numarPacienti"
+                            data-retete="@numarRetete">
+                            
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="medicament-icon-small me-3">
+                                        <span class="icon-circle-small">
+                                            @med.Nume.Substring(0, Math.Min(2, med.Nume.Length)).ToUpper()
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">@med.Nume</h6>
+                                        <small class="text-muted">ID: #@med.Id</small>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td class="text-center">
+                                <span class="badge bg-primary rounded-pill">@numarPacienti</span>
+                            </td>
+                            
+                            <td class="text-center">
+                                <span class="badge bg-success rounded-pill">@numarRetete</span>
+                            </td>
+                            
+                            <td>
+                                @if (numarPacienti == 0)
+                                {
+                                    <span class="badge bg-warning">Fără pacienți</span>
+                                }
+                                else if (numarRetete == 0)
+                                {
+                                    <span class="badge bg-info">Pregătit pentru rețete</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Activ</span>
+                                }
+                            </td>
+                            
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a asp-action="Details" asp-route-id="@med.Id" 
+                                       class="btn btn-outline-primary" title="Vezi detalii">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@med.Id" 
+                                       class="btn btn-outline-warning" title="Editează">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal_@med.Id" 
+                                            title="Șterge"
+                                            @(numarRetete > 0 ? "disabled" : "")>
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-        .medicament-card:hover {
-            transform: scale(1.02);
-        }
-
-    .med-dropdown-btn {
-        background: rgba(255,255,255,0.3);
-        border: none;
-        border-radius: 0.25rem;
-        width: 2rem;
-        height: 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.2s;
-    }
-
-        .med-dropdown-btn:hover {
-            background: rgba(255,255,255,0.5);
-        }
-
-    .medicament-card .dropdown-menu {
-        min-width: 8rem;
-    }
-
-    .dropdown-item i {
-        width: 1rem;
-        margin-right: 0.5rem;
-    }
-</style>
+<!-- No Results -->
+<div id="noResults" class="text-center py-5 d-none">
+    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">Nu au fost găsite medicamente</h4>
+    <p class="text-muted">Încearcă să modifici termenul de căutare</p>
+</div>
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Apply random background
-            const colors = ["#007BFF", "#28A745", "#FFC107", "#DC3545", "#6F42C1", "#20C997", "#E83E8C", "#6610f2"];
-            document.querySelectorAll('.medicament-card').forEach(card => {
-                const name = card.dataset.nume;
-                let hash = 0;
-                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-                card.style.backgroundColor = colors[Math.abs(hash) % colors.length];
-            });
-            // Search/filter
-            document.getElementById('searchInput').addEventListener('input', function () {
-                const term = this.value.trim().toLowerCase();
-                document.querySelectorAll('.medicament-card').forEach(card => {
-                    const show = card.dataset.nume.toLowerCase().includes(term);
-                    card.closest('.col').classList.toggle('d-none', !show);
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('searchInput');
+            const sortSelect = document.getElementById('sortSelect');
+            const gridViewBtn = document.getElementById('gridView');
+            const listViewBtn = document.getElementById('listView');
+            const gridContainer = document.getElementById('gridViewContainer');
+            const listContainer = document.getElementById('listViewContainer');
+            const noResults = document.getElementById('noResults');
+            
+            const gridCards = document.querySelectorAll('.medicament-card');
+            const listRows = document.querySelectorAll('.medicament-list-row');
+
+            // View mode toggle
+            function toggleView() {
+                if (gridViewBtn.checked) {
+                    gridContainer.classList.remove('d-none');
+                    listContainer.classList.add('d-none');
+                } else {
+                    gridContainer.classList.add('d-none');
+                    listContainer.classList.remove('d-none');
+                }
+            }
+
+            gridViewBtn.addEventListener('change', toggleView);
+            listViewBtn.addEventListener('change', toggleView);
+
+            // Search and sort functionality
+            function filterAndSort() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const sortValue = sortSelect.value;
+                
+                const isGridView = gridViewBtn.checked;
+                const elements = isGridView ? gridCards : listRows;
+                
+                let visibleElements = [];
+
+                // Filter
+                elements.forEach(element => {
+                    const name = element.dataset.nume;
+                    const isVisible = name.includes(searchTerm);
+                    
+                    if (isVisible) {
+                        element.style.display = '';
+                        visibleElements.push(element);
+                    } else {
+                        element.style.display = 'none';
+                    }
                 });
-            });
+
+                // Sort
+                visibleElements.sort((a, b) => {
+                    const nameA = a.dataset.nume;
+                    const nameB = b.dataset.nume;
+                    const patientsA = parseInt(a.dataset.pacienti);
+                    const patientsB = parseInt(b.dataset.pacienti);
+                    const prescriptionsA = parseInt(a.dataset.retete);
+                    const prescriptionsB = parseInt(b.dataset.retete);
+                    const idA = parseInt(a.dataset.id);
+                    const idB = parseInt(b.dataset.id);
+
+                    switch (sortValue) {
+                        case 'alphabetical-desc':
+                            return nameB.localeCompare(nameA);
+                        case 'most-patients':
+                            return patientsB - patientsA;
+                        case 'most-prescriptions':
+                            return prescriptionsB - prescriptionsA;
+                        case 'recent':
+                            return idB - idA;
+                        default: // alphabetical
+                            return nameA.localeCompare(nameB);
+                    }
+                });
+
+                // Reorder elements
+                const container = isGridView ? gridContainer : listContainer.querySelector('tbody');
+                visibleElements.forEach(element => {
+                    container.appendChild(element);
+                });
+
+                // Show/hide no results
+                if (visibleElements.length === 0) {
+                    noResults.classList.remove('d-none');
+                    gridContainer.classList.add('d-none');
+                    listContainer.classList.add('d-none');
+                } else {
+                    noResults.classList.add('d-none');
+                    toggleView();
+                }
+            }
+
+            // Event listeners
+            searchInput.addEventListener('input', filterAndSort);
+            sortSelect.addEventListener('change', filterAndSort);
+
+            // Initial load
+            filterAndSort();
         });
     </script>
 }
+
+<style>
+    .medicament-grid-card {
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border-radius: 12px;
+    }
+    
+    .medicament-grid-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    
+    .icon-circle-small {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+    
+    .stat-box {
+        padding: 1rem 0;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .medicament-grid-card .card-header {
+        background: transparent;
+        border-bottom: 1px solid #f8f9fa;
+        padding: 1rem 1.25rem 0.5rem;
+    }
+    
+    .medicament-grid-card .card-footer {
+        border-top: 1px solid #f8f9fa;
+        padding: 1rem 1.25rem;
+    }
+    
+    .btn-check:checked + .btn-outline-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: white;
+    }
+    
+    .table th {
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .medicament-list-row:hover {
+        background-color: rgba(0,123,255,.075);
+    }
+    
+    .badge {
+        font-size: 0.75em;
+    }
+    
+    .btn-group-sm .btn {
+        border-radius: 0.25rem !important;
+        margin-right: 2px;
+    }
+    
+    .input-group-lg .form-control, 
+    .input-group-lg .input-group-text {
+        border-radius: 0.5rem;
+    }
+    
+    .form-select-lg {
+        border-radius: 0.5rem;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-radius: 12px;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+    
+    
+    
+    .medicament-card, .medicament-list-row {
+        animation: fadeInUp 0.3s ease-out;
+    }
+    
+   
+</style>
