@@ -1,0 +1,279 @@
+﻿@model pharma.Models.MedicamentPatientsViewModel
+
+@{
+    ViewData["Title"] = $"Gestionează pacienții - {Model.MedicamentNume}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Gestionează pacienții</h2>
+        <p class="text-muted mb-0">Asocieri pentru medicamentul <strong class="text-primary">@Model.MedicamentNume</strong></p>
+    </div>
+    <div>
+        <a asp-action="Details" asp-route-id="@Model.MedicamentId" class="btn btn-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i> Înapoi la medicament
+        </a>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-list me-1"></i> Lista medicamente
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Associated Patients -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2 text-success"></i>
+                    Pacienți asociați
+                </h5>
+                <span class="badge bg-success">@Model.AssociatedPatients.Count</span>
+            </div>
+            <div class="card-body">
+                @if (Model.AssociatedPatients.Any())
+                {
+                    <div class="list-group">
+                        @foreach (var pacient in Model.AssociatedPatients)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="patient-avatar me-3">
+                                        <span class="badge bg-primary rounded-pill">
+                                            @pacient.Nume.Substring(0, 1)@pacient.Prenume.Substring(0, 1)
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">@pacient.Nume @pacient.Prenume</h6>
+                                        <small class="text-muted">ID: #@pacient.Id</small>
+                                    </div>
+                                </div>
+                                <div>
+                                    <a asp-controller="Pacient" asp-action="Details" asp-route-id="@pacient.Id"
+                                       class="btn btn-outline-info btn-sm me-1"
+                                       title="Vezi detalii pacient">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="btn btn-outline-danger btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#removeModal_@pacient.Id"
+                                            title="Elimină asocierea">
+                                        <i class="fas fa-unlink"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Remove Association Modal -->
+                            <div class="modal fade" id="removeModal_@pacient.Id" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Elimină asocierea</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Vrei să elimini asocierea între pacientul <strong>@pacient.Nume @pacient.Prenume</strong> și medicamentul <strong>@Model.MedicamentNume</strong>?</p>
+
+                                            @{
+                                                var hasRetetePacient = ViewContext.HttpContext.RequestServices.GetService<pharma.Data.PharmaContext>()
+                                                ?.Retete.Any(r => r.PacientId == pacient.Id && r.MedicamentId == Model.MedicamentId) ?? false;
+                                            }
+
+                                            @if (hasRetetePacient)
+                                            {
+                                                <div class="alert alert-danger">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                    <strong>Nu se poate elimina asocierea!</strong><br>
+                                                    Există rețete pentru această combinație de pacient-medicament.
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="alert alert-warning">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                    Pacientul nu va mai putea primi rețete pentru acest medicament.
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                                            @if (!hasRetetePacient)
+                                            {
+                                                <form asp-action="RemovePatientAssociation" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="medicamentId" value="@Model.MedicamentId" />
+                                                    <input type="hidden" name="pacientId" value="@pacient.Id" />
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="fas fa-unlink me-1"></i> Elimină asocierea
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nu există pacienți asociați cu acest medicament.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Patients -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-plus me-2 text-info"></i>
+                    Pacienți disponibili
+                </h5>
+                <span class="badge bg-info">@Model.AvailablePatients.Count</span>
+            </div>
+            <div class="card-body">
+                @if (Model.AvailablePatients.Any())
+                {
+                    <div class="mb-3">
+                        <input type="text" id="searchPatients" class="form-control"
+                               placeholder="Caută pacient...">
+                    </div>
+
+                    <div class="list-group" id="availablePatientsList">
+                        @foreach (var pacient in Model.AvailablePatients)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center patient-item"
+                                 data-name="@pacient.Nume @pacient.Prenume">
+                                <div class="d-flex align-items-center">
+                                    <div class="patient-avatar me-3">
+                                        <span class="badge bg-secondary rounded-pill">
+                                            @pacient.Nume.Substring(0, 1)@pacient.Prenume.Substring(0, 1)
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">@pacient.Nume @pacient.Prenume</h6>
+                                        <small class="text-muted">ID: #@pacient.Id</small>
+                                    </div>
+                                </div>
+                                <div>
+                                    <a asp-controller="Pacient" asp-action="Details" asp-route-id="@pacient.Id"
+                                       class="btn btn-outline-info btn-sm me-1"
+                                       title="Vezi detalii pacient">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form asp-action="AddPatientAssociation" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="medicamentId" value="@Model.MedicamentId" />
+                                        <input type="hidden" name="pacientId" value="@pacient.Id" />
+                                        <button type="submit" class="btn btn-success btn-sm"
+                                                title="Asociază pacientul">
+                                            <i class="fas fa-link"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p class="text-muted mb-3">Toți pacienții sunt deja asociați cu acest medicament!</p>
+                        <a asp-controller="Pacient" asp-action="Create" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-1"></i> Adaugă pacient nou
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Row -->
+<div class="row mt-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h3 class="text-primary mb-0">@Model.AssociatedPatients.Count</h3>
+                            <small class="text-muted">Pacienți asociați</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h3 class="text-info mb-0">@Model.AvailablePatients.Count</h3>
+                            <small class="text-muted">Pacienți disponibili</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            @{
+                                var totalPacienti = ViewContext.HttpContext.RequestServices.GetService<pharma.Data.PharmaContext>()
+                                ?.Pacienti.Count() ?? 0;
+                            }
+                            <h3 class="text-secondary mb-0">@totalPacienti</h3>
+                            <small class="text-muted">Total pacienți</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        @{
+                            var numarRetete = ViewContext.HttpContext.RequestServices.GetService<pharma.Data.PharmaContext>()
+                            ?.Retete.Count(r => r.MedicamentId == Model.MedicamentId) ?? 0;
+                        }
+                        <h3 class="text-success mb-0">@numarRetete</h3>
+                        <small class="text-muted">Rețete emise</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('searchPatients');
+            const patientItems = document.querySelectorAll('.patient-item');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    const searchTerm = this.value.toLowerCase();
+
+                    patientItems.forEach(item => {
+                        const name = item.dataset.name.toLowerCase();
+                        if (name.includes(searchTerm)) {
+                            item.classList.remove('d-none');
+                        } else {
+                            item.classList.add('d-none');
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+}
+
+<style>
+    .patient-avatar .badge {
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+
+    .list-group-item:hover {
+        background-color: rgba(0,123,255,.075);
+    }
+</style>

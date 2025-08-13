@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using pharma.Data;
 
@@ -11,9 +12,11 @@ using pharma.Data;
 namespace pharma.Migrations
 {
     [DbContext(typeof(PharmaContext))]
-    partial class PharmaContextModelSnapshot : ModelSnapshot
+    [Migration("20250730205528_PacientMedicament")]
+    partial class PacientMedicament
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,6 +24,21 @@ namespace pharma.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("MedicamentPacient", b =>
+                {
+                    b.Property<int>("MedicamenteId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PacientiId")
+                        .HasColumnType("int");
+
+                    b.HasKey("MedicamenteId", "PacientiId");
+
+                    b.HasIndex("PacientiId");
+
+                    b.ToTable("MedicamentPacient");
+                });
 
             modelBuilder.Entity("pharma.Models.Medicament", b =>
                 {
@@ -63,24 +81,6 @@ namespace pharma.Migrations
                     b.ToTable("Pacienti");
                 });
 
-            modelBuilder.Entity("pharma.Models.PacientMedicament", b =>
-                {
-                    b.Property<int>("PacientId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MedicamentId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("DataAsocierii")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("PacientId", "MedicamentId");
-
-                    b.HasIndex("MedicamentId");
-
-                    b.ToTable("PacientMedicamente");
-                });
-
             modelBuilder.Entity("pharma.Models.Reteta", b =>
                 {
                     b.Property<int>("Id")
@@ -119,23 +119,19 @@ namespace pharma.Migrations
                     b.ToTable("Retete");
                 });
 
-            modelBuilder.Entity("pharma.Models.PacientMedicament", b =>
+            modelBuilder.Entity("MedicamentPacient", b =>
                 {
-                    b.HasOne("pharma.Models.Medicament", "Medicament")
-                        .WithMany("PacientMedicamente")
-                        .HasForeignKey("MedicamentId")
+                    b.HasOne("pharma.Models.Medicament", null)
+                        .WithMany()
+                        .HasForeignKey("MedicamenteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("pharma.Models.Pacient", "Pacient")
-                        .WithMany("PacientMedicamente")
-                        .HasForeignKey("PacientId")
+                    b.HasOne("pharma.Models.Pacient", null)
+                        .WithMany()
+                        .HasForeignKey("PacientiId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Medicament");
-
-                    b.Navigation("Pacient");
                 });
 
             modelBuilder.Entity("pharma.Models.Reteta", b =>
@@ -159,15 +155,11 @@ namespace pharma.Migrations
 
             modelBuilder.Entity("pharma.Models.Medicament", b =>
                 {
-                    b.Navigation("PacientMedicamente");
-
                     b.Navigation("Retete");
                 });
 
             modelBuilder.Entity("pharma.Models.Pacient", b =>
                 {
-                    b.Navigation("PacientMedicamente");
-
                     b.Navigation("Retete");
                 });
 #pragma warning restore 612, 618

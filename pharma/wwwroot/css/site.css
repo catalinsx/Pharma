@@ -47,60 +47,237 @@ body {
     --sidebar-accent: #1ABC9C;
 }
 
+/* Sidebar Styling */
 .sidebar {
-    background: var(--sidebar-bg) !important;
-    width: 260px;
-    height: 100%;
-    overflow-y: auto;
-    padding-top: 1rem;
+    width: 280px;
+    background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 1000;
 }
 
 .sidebar-header {
-    padding: 1rem 0;
-    text-align: center;
-    border-bottom: 1px solid rgba(236, 240, 241, 0.2);
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.1);
 }
 
-.sidebar .section-title {
-    padding: 0.75rem 1rem;
-    margin-top: 1rem;
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    color: rgba(236, 240, 241, 0.7);
+.sidebar .nav {
+    padding: 1rem 0;
+    flex: 1;
 }
 
 .sidebar .nav-link {
-    display: block;
-    color: var(--sidebar-text) !important;
-    padding: 0.75rem 1rem;
-    margin: 0.25rem 0.5rem;
-    width: calc(100% - 1rem);
-    transition: background 0.2s, padding-left 0.2s, margin 0.2s;
-    position: relative;
+    color: rgba(255,255,255,0.8);
+    padding: 0.75rem 1.5rem;
+    margin: 0.2rem 1rem;
     border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
 }
 
-.sidebar .nav-link:hover {
-        background: var(--sidebar-hover) !important;
-        padding-left: 1.5rem;
-        /* keep same margin to constrain hover shape */
+    .sidebar .nav-link:hover {
+        background: rgba(255,255,255,0.15);
+        color: white;
+        transform: translateX(5px);
+    }
+
+    .sidebar .nav-link.active {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+.sidebar .section-title {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1rem 1.5rem 0.5rem;
+    margin-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
 }
 
-.sidebar .nav-link.active {
-        background: var(--sidebar-accent) !important;
-        color: #fff !important;
-        /* margin intact for active state */
+    .sidebar .section-title:first-child {
+        margin-top: 0;
+        border-top: none;
+    }
+
+/* Main content */
+main {
+    background-color: #f8f9fa !important;
 }
 
-.sidebar .nav-link.active::before {
-            content: "";
-            position: absolute;
-            left: -0.5rem;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background: #16A085;
-            border-top-left-radius: 0.5rem;
-            border-bottom-left-radius: 0.5rem;
+/* Alert styling */
+.alert {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #cce7ff;
+    color: #0c5460;
+}
+
+/* Card styling */
+.card {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+    .card:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    }
+
+.card-header {
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+    background-color: rgba(255,255,255,0.8);
+}
+
+/* Button improvements */
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+}
+
+    .btn-primary:hover {
+        background: linear-gradient(45deg, #0056b3, #004085);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,123,255,0.4);
+    }
+
+.btn-success {
+    background: linear-gradient(45deg, #28a745, #1e7e34);
+    border: none;
+    box-shadow: 0 2px 8px rgba(40,167,69,0.3);
+}
+
+.btn-danger {
+    background: linear-gradient(45deg, #dc3545, #bd2130);
+    border: none;
+    box-shadow: 0 2px 8px rgba(220,53,69,0.3);
+}
+
+/* Table improvements */
+.table {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+    .table thead th {
+        background-color: #f8f9fa;
+        border: none;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+        .table tbody tr:hover {
+            background-color: rgba(0,123,255,0.05);
+        }
+
+/* Form improvements */
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+    .form-control:focus, .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.15);
+    }
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Badge improvements */
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+}
+
+/* Modal improvements */
+.modal-content {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(0,0,0,0.08);
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 250px;
+    }
+
+    .sidebar-header h4 {
+        font-size: 1rem;
+    }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }

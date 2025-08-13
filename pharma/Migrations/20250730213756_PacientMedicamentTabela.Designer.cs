@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using pharma.Data;
 
@@ -11,9 +12,11 @@ using pharma.Data;
 namespace pharma.Migrations
 {
     [DbContext(typeof(PharmaContext))]
-    partial class PharmaContextModelSnapshot : ModelSnapshot
+    [Migration("20250730213756_PacientMedicamentTabela")]
+    partial class PacientMedicamentTabela
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -70,9 +73,6 @@ namespace pharma.Migrations
 
                     b.Property<int>("MedicamentId")
                         .HasColumnType("int");
-
-                    b.Property<DateTime>("DataAsocierii")
-                        .HasColumnType("datetime2");
 
                     b.HasKey("PacientId", "MedicamentId");
 

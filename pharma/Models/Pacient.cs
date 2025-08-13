@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using pharma.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace pharma.Models
 {
@@ -16,5 +17,7 @@ namespace pharma.Models
 
         public DateTime? DataUrmatoareiVizite { get; set; }
 
+        // Many-to-many relationship with Medicament through junction table
+        public List<PacientMedicament> PacientMedicamente { get; set; } = new();
     }
 }

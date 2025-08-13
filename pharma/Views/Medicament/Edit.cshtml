@@ -1,0 +1,175 @@
+﻿@model pharma.Models.Medicament
+
+@{
+    ViewData["Title"] = $"Editează medicament - {Model.Nume}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Editează medicament</h2>
+        <p class="text-muted mb-0">Actualizează informațiile medicamentului</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Înapoi la listă
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-pills me-2"></i>
+                    Informații medicament
+                </h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Edit" method="post">
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="mb-4">
+                        <label asp-for="Nume" class="form-label">Nume medicament</label>
+                        <input asp-for="Nume" class="form-control form-control-lg" />
+                        <span asp-validation-for="Nume" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a asp-action="Index" class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-1"></i> Anulează
+                            </a>
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-info">
+                                <i class="fas fa-eye me-1"></i> Vezi detalii
+                            </a>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-danger me-2"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal">
+                                <i class="fas fa-trash me-1"></i> Șterge medicament
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Salvează modificările
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Informații suplimentare
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">ID Medicament</small>
+                    <strong>#@Model.Id</strong>
+                </div>
+
+                @{
+                    var numarPacienti = ViewContext.HttpContext.RequestServices.GetService<pharma.Data.PharmaContext>()
+                    ?.PacientMedicamente.Count(pm => pm.MedicamentId == Model.Id) ?? 0;
+                    var numarRetete = ViewContext.HttpContext.RequestServices.GetService<pharma.Data.PharmaContext>()
+                    ?.Retete.Count(r => r.MedicamentId == Model.Id) ?? 0;
+                }
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Pacienți asociați</small>
+                    <strong>@numarPacienti</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Rețete emise</small>
+                    <strong>@numarRetete</strong>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a asp-action="ManagePatients" asp-route-id="@Model.Id"
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-users me-1"></i> Gestionează pacienții
+                    </a>
+                    <a asp-controller="Reteta" asp-action="Index" asp-route-medId="@Model.Id"
+                       class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-file-medical me-1"></i> Vezi toate rețetele
+                    </a>
+                </div>
+
+                @if (numarRetete > 0)
+                {
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenție!</strong> Acest medicament are @numarRetete rețete asociate și nu poate fi șters.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmare ștergere
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <strong>Atenție!</strong> Vrei să ștergi definitiv medicamentul <strong>@Model.Nume</strong>?
+                </div>
+
+                <p>Această acțiune va șterge:</p>
+                <ul>
+                    <li>Medicamentul din sistem</li>
+                    <li>Toate asocierile cu pacienții (@numarPacienti asocieri)</li>
+                </ul>
+
+                @if (numarRetete > 0)
+                {
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle me-2"></i>
+                        <strong>Nu poți șterge acest medicament!</strong><br>
+                        Are @numarRetete rețete asociate. Șterge mai întâi rețetele pentru a putea șterge medicamentul.
+                    </div>
+                }
+                else
+                {
+                    <p class="text-danger"><strong>Această acțiune nu poate fi anulată!</strong></p>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                @if (numarRetete == 0)
+                {
+                    <form asp-action="Delete" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i> Șterge definitiv
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-danger" disabled>
+                        <i class="fas fa-lock me-1"></i> Nu se poate șterge
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

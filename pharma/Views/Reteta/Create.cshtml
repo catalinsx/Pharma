@@ -1,0 +1,102 @@
+﻿@model pharma.Models.RetetaCreateViewModel
+
+@{
+    ViewData["Title"] = $"Adaugă rețetă - {Model.MedicamentNume}";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-medical me-2"></i>
+                        Adaugă rețetă nouă - <strong>@Model.MedicamentNume</strong>
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <input type="hidden" asp-for="MedicamentId" />
+                        <input type="hidden" asp-for="MedicamentNume" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Data" class="form-label">Data rețetei</label>
+                                    <input asp-for="Data" type="date" class="form-control" />
+                                    <span asp-validation-for="Data" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="PacientId" class="form-label">Pacient</label>
+                                    <select asp-for="PacientId" class="form-select">
+                                        <option value="">-- Selectează pacientul --</option>
+                                        @foreach (var pacient in Model.PacientiDisponibili)
+                                        {
+                                            <option value="@pacient.Id">@pacient.Nume @pacient.Prenume</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="PacientId" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Serie" class="form-label">Serie</label>
+                                    <input asp-for="Serie" class="form-control" placeholder="Ex: A123" />
+                                    <span asp-validation-for="Serie" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="NrReteta" class="form-label">Numărul rețetei</label>
+                                    <input asp-for="NrReteta" class="form-control" placeholder="Ex: 001234" />
+                                    <span asp-validation-for="NrReteta" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="DataUrmatoareiVizite" class="form-label">Data următoarei vizite (opțional)</label>
+                            <input asp-for="DataUrmatoareiVizite" type="date" class="form-control" />
+                            <span asp-validation-for="DataUrmatoareiVizite" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Observatii" class="form-label">Observații</label>
+                            <textarea asp-for="Observatii" class="form-control" rows="3" placeholder="Instrucțiuni speciale, doze, etc..."></textarea>
+                            <span asp-validation-for="Observatii" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-controller="Medicament" asp-action="Details" asp-route-id="@Model.MedicamentId"
+                               class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Înapoi
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Salvează rețeta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @if (Model.PacientiDisponibili.Count == 0)
+            {
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Nu există pacienți asociați cu acest medicament.
+                    <a asp-controller="Pacient" asp-action="Create" class="alert-link">Adaugă un pacient nou</a>
+                    și asociază-l cu medicamentul @Model.MedicamentNume.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

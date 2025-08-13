@@ -1,0 +1,223 @@
+﻿@model pharma.Models.RetetaEditViewModel
+
+@{
+    ViewData["Title"] = $"Editează rețeta - {Model.MedicamentNume}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Editează rețeta</h2>
+        <p class="text-muted mb-0">Medicament: <strong class="text-primary">@Model.MedicamentNume</strong></p>
+    </div>
+    <div>
+        <a asp-controller="Reteta" asp-action="Index" asp-route-medId="@Model.MedicamentId" class="btn btn-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i> Înapoi la rețete
+        </a>
+        <a asp-controller="Medicament" asp-action="Details" asp-route-id="@Model.MedicamentId" class="btn btn-outline-secondary">
+            <i class="fas fa-pills me-1"></i> Vezi medicamentul
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-medical me-2"></i>
+                    Detalii rețetă
+                </h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Edit" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="MedicamentId" />
+                    <input type="hidden" asp-for="MedicamentNume" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Data" class="form-label">Data rețetei</label>
+                                <input asp-for="Data" type="date" class="form-control" />
+                                <span asp-validation-for="Data" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="PacientId" class="form-label">Pacient</label>
+                                <select asp-for="PacientId" class="form-select">
+                                    <option value="">-- Selectează pacientul --</option>
+                                    @foreach (var pacient in Model.PacientiDisponibili)
+                                    {
+                                        <option value="@pacient.Id">@pacient.Nume @pacient.Prenume</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="PacientId" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Serie" class="form-label">Serie</label>
+                                <input asp-for="Serie" class="form-control" placeholder="Ex: A123" />
+                                <span asp-validation-for="Serie" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NrReteta" class="form-label">Numărul rețetei</label>
+                                <input asp-for="NrReteta" class="form-control" placeholder="Ex: 001234" />
+                                <span asp-validation-for="NrReteta" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="DataUrmatoareiVizite" class="form-label">Data următoarei vizite (opțional)</label>
+                        <input asp-for="DataUrmatoareiVizite" type="date" class="form-control" />
+                        <span asp-validation-for="DataUrmatoareiVizite" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Observatii" class="form-label">Observații</label>
+                        <textarea asp-for="Observatii" class="form-control" rows="3" placeholder="Instrucțiuni speciale, doze, etc..."></textarea>
+                        <span asp-validation-for="Observatii" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a asp-controller="Reteta" asp-action="Index" asp-route-medId="@Model.MedicamentId"
+                               class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-1"></i> Anulează
+                            </a>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-danger me-2"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal">
+                                <i class="fas fa-trash me-1"></i> Șterge rețeta
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Salvează modificările
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Informații rețetă
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">ID Rețetă</small>
+                    <strong>#@Model.Id</strong>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Medicament</small>
+                    <span class="badge bg-info">@Model.MedicamentNume</span>
+                </div>
+
+                @{
+                    var pacientCurent = Model.PacientiDisponibili.FirstOrDefault(p => p.Id == Model.PacientId);
+                }
+
+                @if (pacientCurent != null)
+                {
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Pacient curent</small>
+                        <strong>@pacientCurent.Nume @pacientCurent.Prenume</strong>
+                        <br>
+                        <small class="text-muted">ID: #@pacientCurent.Id</small>
+                    </div>
+                }
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Data creării originale</small>
+                    <strong>@Model.Data.ToString("dd.MM.yyyy HH:mm")</strong>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Sfat:</strong> Modificările vor fi salvate imediat. Asigură-te că toate informațiile sunt corecte.
+                </div>
+
+                <div class="d-grid">
+                    <a asp-controller="Medicament" asp-action="Details" asp-route-id="@Model.MedicamentId"
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-pills me-1"></i> Vezi detalii medicament
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmare ștergere
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <strong>Atenție!</strong> Vrei să ștergi definitiv această rețetă?
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <p><strong>Detalii rețetă:</strong></p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-calendar text-info me-2"></i> Data: @Model.Data.ToString("dd.MM.yyyy")</li>
+                            <li><i class="fas fa-pills text-info me-2"></i> Medicament: @Model.MedicamentNume</li>
+                            @if (pacientCurent != null)
+                            {
+                                <li><i class="fas fa-user text-info me-2"></i> Pacient: @pacientCurent.Nume @pacientCurent.Prenume</li>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.Serie))
+                            {
+                                <li><i class="fas fa-barcode text-info me-2"></i> Serie: @Model.Serie</li>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.NrReteta))
+                            {
+                                <li><i class="fas fa-hashtag text-info me-2"></i> Număr: @Model.NrReteta</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+
+                <p class="text-danger"><strong>Această acțiune nu poate fi anulată!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                <form asp-action="Delete" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="returnMedId" value="@Model.MedicamentId" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> Șterge definitiv
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

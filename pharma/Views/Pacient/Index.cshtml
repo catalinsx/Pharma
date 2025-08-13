@@ -4,35 +4,267 @@
     ViewData["Title"] = "Lista pacienți";
 }
 
-
 <link rel="stylesheet" href="~/lib/datatables/datatables.min.css" />
 
-<h2 class="mb-4">Lista pacienți</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Lista pacienți</h2>
+        <p class="text-muted mb-0">@Model.Count() pacienți înregistrați</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="fas fa-user-plus me-1"></i> Adaugă pacient
+    </a>
+</div>
 
-<table id="tabelPacienti" class="table table-striped table-bordered">
-    <thead>
-        <tr>
-            <th>Nume</th>
-            <th>Prenume</th>
-            <th>Acțiuni</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var pacient in Model)
-        {
-            <tr>
-                <td>@pacient.Nume</td>
-                <td>@pacient.Prenume</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@pacient.Id" class="btn btn-sm btn-warning">Editează</a>
-                    <a asp-action="Details" asp-route-id="@pacient.Id" class="btn btn-sm btn-info">Detalii</a>
-                    <a asp-action="Delete" asp-route-id="@pacient.Id" class="btn btn-sm btn-danger">Șterge</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabelPacienti" class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th width="20%">Nume</th>
+                        <th width="20%">Prenume</th>
+                        <th width="35%">Medicamente asociate</th>
+                        <th width="15%">Data înregistrării</th>
+                        <th width="10%">Acțiuni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var pacient in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="patient-avatar me-2">
+                                        <span class="badge bg-primary rounded-pill">
+                                            @pacient.Nume.Substring(0, 1)@pacient.Prenume.Substring(0, 1)
+                                        </span>
+                                    </div>
+                                    <strong>@pacient.Nume</strong>
+                                </div>
+                            </td>
+                            <td><strong>@pacient.Prenume</strong></td>
+                            <td>
+                                @if (pacient.PacientMedicamente.Any())
+                                {
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach (var pm in pacient.PacientMedicamente.Take(3))
+                                        {
+                                            <span class="badge bg-info text-wrap">@pm.Medicament.Nume</span>
+                                        }
+                                        @if (pacient.PacientMedicamente.Count > 3)
+                                        {
+                                            <span class="badge bg-secondary">+@(pacient.PacientMedicamente.Count - 3) mai mult</span>
+                                        }
+                                    </div>
+                                    <small class="text-muted">
+                                        Total: @pacient.PacientMedicamente.Count medicament@(pacient.PacientMedicamente.Count != 1 ? "e" : "")
+                                    </small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">
+                                        <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                        Nu sunt asociate medicamente
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var dataInregistrarii = pacient.PacientMedicamente.OrderBy(pm => pm.DataAsocierii).FirstOrDefault()?.DataAsocierii ?? DateTime.Now;
+                                }
+                                <span class="text-muted">@dataInregistrarii.ToString("dd.MM.yyyy")</span>
+                                <br>
+                                <small class="text-muted">@dataInregistrarii.ToString("HH:mm")</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-info"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#detailsModal_@pacient.Id"
+                                            title="Vezi detalii">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <a asp-action="Edit" asp-route-id="@pacient.Id"
+                                       class="btn btn-outline-warning"
+                                       title="Editează">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteModal_@pacient.Id"
+                                            title="Șterge">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
+<!-- Detail Modals for each patient -->
+@foreach (var pacient in Model)
+{
+    <!-- Details Modal -->
+    <div class="modal fade" id="detailsModal_@pacient.Id" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user me-2"></i>
+                        Detalii pacient - @pacient.Nume @pacient.Prenume
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Informații generale</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>ID:</strong></td>
+                                    <td>@pacient.Id</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Nume complet:</strong></td>
+                                    <td>@pacient.Nume @pacient.Prenume</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Data înregistrării:</strong></td>
+                                    <td>
+                                        @{
+                                            var dataReg = pacient.PacientMedicamente.OrderBy(pm => pm.DataAsocierii).FirstOrDefault()?.DataAsocierii ?? DateTime.Now;
+                                        }
+                                        @dataReg.ToString("dd.MM.yyyy HH:mm")
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Nr. de rețete:</strong></td>
+                                    <td>@pacient.Retete.Count</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Medicamente asociate</h6>
+                            @if (pacient.PacientMedicamente.Any())
+                            {
+                                <div class="list-group">
+                                    @foreach (var pm in pacient.PacientMedicamente)
+                                    {
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>@pm.Medicament.Nume</span>
+                                            <span class="badge bg-info">@pm.DataAsocierii.ToString("dd.MM.yyyy")</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Nu sunt asociate medicamente acestui pacient.
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (pacient.Retete.Any())
+                    {
+                        <div class="row mt-4">
+                            <div class="col">
+                                <h6 class="text-muted">Ultimele rețete</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Medicament</th>
+                                                <th>Serie/Nr</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var reteta in pacient.Retete.OrderByDescending(r => r.Data).Take(5))
+                                            {
+                                                <tr>
+                                                    <td>@reteta.Data.ToString("dd.MM.yyyy")</td>
+                                                    <td>
+                                                        <span class="badge bg-info">@reteta.medicament?.Nume</span>
+                                                    </td>
+                                                    <td>
+                                                        <small>@reteta.Serie/@reteta.NrReteta</small>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Închide</button>
+                    <a asp-action="Edit" asp-route-id="@pacient.Id" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i> Editează
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteModal_@pacient.Id" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">Confirmare ștergere</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <strong>Atenție!</strong> Vrei să ștergi pacientul <strong>@pacient.Nume @pacient.Prenume</strong>?
+                    </div>
+
+                    @if (pacient.Retete.Any())
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Acest pacient are @pacient.Retete.Count rețete asociate!</strong>
+                            <br>Ștergerea pacientului va șterge și toate rețetele sale.
+                        </div>
+                    }
+
+                    @if (pacient.PacientMedicamente.Any())
+                    {
+                        <p><strong>Medicamente asociate:</strong></p>
+                        <ul class="list-unstyled">
+                            @foreach (var pm in pacient.PacientMedicamente)
+                            {
+                                <li><i class="fas fa-pills text-info me-1"></i> @pm.Medicament.Nume</li>
+                            }
+                        </ul>
+                    }
+
+                    <p class="text-muted"><strong>Această acțiune nu poate fi anulată!</strong></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                    <form asp-action="Delete" asp-controller="Pacient" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@pacient.Id" />
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i> Șterge definitiv
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <script src="~/lib/datatables/jquery.min.js"></script>
 <script src="~/lib/datatables/datatables.min.js"></script>
@@ -41,8 +273,42 @@
     $(document).ready(function () {
         $('#tabelPacienti').DataTable({
             language: {
-                url: '/lib/datatables/i18n/Romanian.json' 
-            }
+                url: '/lib/datatables/i18n/Romanian.json'
+            },
+            pageLength: 25,
+            order: [[0, 'asc']], // Sort by name by default
+            columnDefs: [
+                { orderable: false, targets: [4] }, // Disable sorting for Actions column
+                { className: "text-center", targets: [4] }
+            ]
         });
     });
 </script>
+
+<style>
+    .patient-avatar .badge {
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+
+    .badge {
+        font-size: 0.75em;
+        margin: 1px;
+    }
+
+    .btn-group-sm .btn {
+        border-radius: 0.25rem;
+        margin-right: 2px;
+    }
+
+    .list-group-item {
+        border-radius: 0.5rem !important;
+        margin-bottom: 0.25rem;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+</style>

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using pharma.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace pharma.Models
 {
@@ -10,5 +11,7 @@ namespace pharma.Models
 
         public List<Reteta> Retete { get; set; } = new();
 
+        // Many-to-many relationship with Pacient through junction table
+        public List<PacientMedicament> PacientMedicamente { get; set; } = new();
     }
 }

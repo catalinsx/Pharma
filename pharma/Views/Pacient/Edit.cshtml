@@ -1,0 +1,225 @@
+﻿@model pharma.Models.PacientEditViewModel
+
+@{
+    ViewData["Title"] = "Editează pacient";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Editează pacient</h2>
+        <p class="text-muted mb-0">Actualizează informațiile și asocierile cu medicamentele</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Înapoi la listă
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-edit me-2"></i>
+                    Informații pacient
+                </h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Edit" method="post">
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Nume" class="form-label">Nume</label>
+                                <input asp-for="Nume" class="form-control" />
+                                <span asp-validation-for="Nume" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Prenume" class="form-label">Prenume</label>
+                                <input asp-for="Prenume" class="form-control" />
+                                <span asp-validation-for="Prenume" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Medicamente asociate</label>
+                        <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto; background-color: #f8f9fa;">
+                            @if (Model.AvailableMedicamente.Any())
+                            {
+                                @for (int i = 0; i < Model.AvailableMedicamente.Count; i++)
+                                {
+                                    var isChecked = Model.SelectedMedicamentIds.Contains(Model.AvailableMedicamente[i].Id);
+                                    <div class="form-check mb-2">
+                                        <input type="checkbox"
+                                               name="SelectedMedicamentIds"
+                                               value="@Model.AvailableMedicamente[i].Id"
+                                               class="form-check-input"
+                                               id="med_@Model.AvailableMedicamente[i].Id"
+                                        @(isChecked ? "checked" : "")>
+                                        <label class="form-check-label" for="med_@Model.AvailableMedicamente[i].Id">
+                                            <span class="fw-semibold">@Model.AvailableMedicamente[i].Nume</span>
+                                            @if (isChecked)
+                                            {
+                                                <span class="badge bg-success ms-2">Asociat</span>
+                                            }
+                                        </label>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0">
+                                    Nu există medicamente disponibile.
+                                    <a asp-controller="Medicament" asp-action="Create">Adaugă primul medicament</a>
+                                </p>
+                            }
+                        </div>
+                        <span asp-validation-for="SelectedMedicamentIds" class="text-danger"></span>
+                        <small class="form-text text-muted">Selectează medicamentele pe care acest pacient le poate utiliza.</small>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a asp-action="Index" class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-1"></i> Anulează
+                            </a>
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-info">
+                                <i class="fas fa-eye me-1"></i> Vezi detalii
+                            </a>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-danger me-2"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal">
+                                <i class="fas fa-trash me-1"></i> Șterge pacient
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Salvează modificările
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Informații suplimentare
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">ID Pacient</small>
+                    <strong>#@Model.Id</strong>
+                </div>
+
+                @{
+                    var currentAssociations = Model.AvailableMedicamente
+                    .Where(m => Model.SelectedMedicamentIds.Contains(m.Id))
+                    .Count();
+                }
+
+                <div class="mb-3">
+                    <small class="text-muted d-block">Medicamente asociate</small>
+                    <strong>@currentAssociations din @Model.AvailableMedicamente.Count disponibile</strong>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Atenție!</strong> Modificarea asocierilor poate afecta rețetele existente.
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Sfat:</strong> Un pacient trebuie să aibă cel puțin un medicament asociat pentru a putea primi rețete.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmare ștergere
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <strong>Atenție!</strong> Vrei să ștergi definitiv pacientul <strong>@Model.Nume @Model.Prenume</strong>?
+                </div>
+
+                <p>Această acțiune va șterge:</p>
+                <ul>
+                    <li>Toate informațiile pacientului</li>
+                    <li>Toate asocierile cu medicamentele</li>
+                    <li>Toate rețetele asociate</li>
+                </ul>
+
+                <p class="text-danger"><strong>Această acțiune nu poate fi anulată!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                <form asp-action="Delete" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> Șterge definitiv
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][name="SelectedMedicamentIds"]');
+            const form = document.querySelector('form');
+
+            form.addEventListener('submit', function (e) {
+                const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+                if (checkedBoxes.length === 0) {
+                    e.preventDefault();
+                    alert('Te rog să selectezi cel puțin un medicament pentru acest pacient.');
+                    return false;
+                }
+            });
+
+            // Add visual feedback when checking/unchecking
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function () {
+                    const label = this.nextElementSibling;
+                    const badge = label.querySelector('.badge');
+
+                    if (this.checked) {
+                        if (!badge) {
+                            const newBadge = document.createElement('span');
+                            newBadge.className = 'badge bg-success ms-2';
+                            newBadge.textContent = 'Asociat';
+                            label.appendChild(newBadge);
+                        }
+                    } else {
+                        if (badge) {
+                            badge.remove();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+}
