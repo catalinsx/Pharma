@@ -44,28 +44,67 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="CNP" class="form-label">CNP</label>
+                                <input asp-for="CNP" class="form-control" maxlength="13" />
+                                <span asp-validation-for="CNP" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NrTelefon" class="form-label">Număr de telefon</label>
+                                <input asp-for="NrTelefon" class="form-control" />
+                                <span asp-validation-for="NrTelefon" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="AlteDetalii" class="form-label">Alte detalii</label>
+                        <textarea asp-for="AlteDetalii" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="AlteDetalii" class="text-danger"></span>
+                    </div>
+
                     <div class="mb-4">
                         <label class="form-label">Medicamente asociate</label>
-                        <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto; background-color: #f8f9fa;">
+                        <div class="mb-3">
+                            <input type="text" id="searchMedicamente" class="form-control"
+                                   placeholder="Caută medicamente...">
+                        </div>
+
+                        <div id="medicamenteList" style="max-height: 400px; overflow-y: auto;">
                             @if (Model.AvailableMedicamente.Any())
                             {
                                 @for (int i = 0; i < Model.AvailableMedicamente.Count; i++)
                                 {
                                     var isChecked = Model.SelectedMedicamentIds.Contains(Model.AvailableMedicamente[i].Id);
-                                    <div class="form-check mb-2">
-                                        <input type="checkbox"
-                                               name="SelectedMedicamentIds"
-                                               value="@Model.AvailableMedicamente[i].Id"
-                                               class="form-check-input"
-                                               id="med_@Model.AvailableMedicamente[i].Id"
-                                        @(isChecked ? "checked" : "")>
-                                        <label class="form-check-label" for="med_@Model.AvailableMedicamente[i].Id">
-                                            <span class="fw-semibold">@Model.AvailableMedicamente[i].Nume</span>
-                                            @if (isChecked)
-                                            {
-                                                <span class="badge bg-success ms-2">Asociat</span>
-                                            }
-                                        </label>
+                                    <div class="medicament-item mb-3 p-3 border rounded @(isChecked ? "selected" : "")"
+                                         data-name="@Model.AvailableMedicamente[i].Nume.ToLower()">
+                                        <div class="form-check">
+                                            <input type="checkbox"
+                                                   name="SelectedMedicamentIds"
+                                                   value="@Model.AvailableMedicamente[i].Id"
+                                                   class="form-check-input medicament-checkbox"
+                                                   id="med_@Model.AvailableMedicamente[i].Id"
+                                            @(isChecked ? "checked" : "")>
+                                            <label class="form-check-label w-100 cursor-pointer" for="med_@Model.AvailableMedicamente[i].Id">
+                                                <div class="d-flex align-items-center justify-content-between">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-pills me-3 text-primary"></i>
+                                                        <div>
+                                                            <strong class="d-block">@Model.AvailableMedicamente[i].Nume</strong>
+                                                            <small class="text-muted">Selectează pentru asociere</small>
+                                                        </div>
+                                                    </div>
+                                                    @if (isChecked)
+                                                    {
+                                                        <span class="badge bg-success">Asociat</span>
+                                                    }
+                                                </div>
+                                            </label>
+                                        </div>
                                     </div>
                                 }
                             }
@@ -79,6 +118,11 @@
                         </div>
                         <span asp-validation-for="SelectedMedicamentIds" class="text-danger"></span>
                         <small class="form-text text-muted">Selectează medicamentele pe care acest pacient le poate utiliza.</small>
+
+                        <!-- Counter pentru medicamente selectate -->
+                        <div class="mt-3 text-center">
+                            <span id="selectedCount" class="badge bg-info">0 selectate</span>
+                        </div>
                     </div>
 
                     <div class="d-flex justify-content-between">
@@ -86,9 +130,10 @@
                             <a asp-action="Index" class="btn btn-secondary me-2">
                                 <i class="fas fa-times me-1"></i> Anulează
                             </a>
-                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-info">
+                            <button type="button" class="btn btn-outline-info"
+                                    onclick="showPatientDetails(@Model.Id)">
                                 <i class="fas fa-eye me-1"></i> Vezi detalii
-                            </a>
+                            </button>
                         </div>
                         <div>
                             <button type="button" class="btn btn-outline-danger me-2"
@@ -184,15 +229,71 @@
     </div>
 </div>
 
+<!-- Modal pentru detalii pacient -->
+<div class="modal fade" id="patientDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user me-2"></i>
+                    Detalii pacient
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="patientDetailsContent">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Se încarcă...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Închide</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const checkboxes = document.querySelectorAll('input[type="checkbox"][name="SelectedMedicamentIds"]');
+            const searchMedicamente = document.getElementById('searchMedicamente');
+            const medicamenteItems = document.querySelectorAll('.medicament-item');
+            const medicamenteCheckboxes = document.querySelectorAll('.medicament-checkbox');
+            const selectedCount = document.getElementById('selectedCount');
             const form = document.querySelector('form');
 
+            // Search medicamente functionality
+            if (searchMedicamente && medicamenteItems.length > 0) {
+                searchMedicamente.addEventListener('input', function () {
+                    const searchTerm = this.value.toLowerCase();
+
+                    medicamenteItems.forEach(item => {
+                        const name = item.dataset.name;
+                        if (name.includes(searchTerm)) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+
+                    updateSelectedCount();
+                });
+            }
+
+            // Counter pentru medicamente selectate
+            function updateSelectedCount() {
+                if (selectedCount && medicamenteCheckboxes.length > 0) {
+                    const checked = Array.from(medicamenteCheckboxes).filter(cb => cb.checked).length;
+                    selectedCount.textContent = `${checked} selectate`;
+                    selectedCount.className = checked > 0 ? 'badge bg-success' : 'badge bg-info';
+                }
+            }
+
+            // Form validation
             form.addEventListener('submit', function (e) {
-                const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+                const checkedBoxes = Array.from(medicamenteCheckboxes).filter(cb => cb.checked);
                 if (checkedBoxes.length === 0) {
                     e.preventDefault();
                     alert('Te rog să selectezi cel puțin un medicament pentru acest pacient.');
@@ -200,26 +301,271 @@
                 }
             });
 
-            // Add visual feedback when checking/unchecking
-            checkboxes.forEach(checkbox => {
+            // Visual feedback pentru checkbox-uri
+            medicamenteCheckboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', function () {
-                    const label = this.nextElementSibling;
-                    const badge = label.querySelector('.badge');
+                    const item = this.closest('.medicament-item');
+                    const badge = item.querySelector('.badge');
 
                     if (this.checked) {
+                        item.classList.add('selected');
                         if (!badge) {
                             const newBadge = document.createElement('span');
-                            newBadge.className = 'badge bg-success ms-2';
+                            newBadge.className = 'badge bg-success';
                             newBadge.textContent = 'Asociat';
-                            label.appendChild(newBadge);
+                            item.querySelector('.d-flex.align-items-center.justify-content-between').appendChild(newBadge);
                         }
                     } else {
+                        item.classList.remove('selected');
                         if (badge) {
                             badge.remove();
                         }
                     }
+                    updateSelectedCount();
                 });
             });
+
+            // Initialize count
+            updateSelectedCount();
         });
+
+        // Funcție pentru afișarea detaliilor în modal
+        async function showPatientDetails(patientId) {
+            const modal = new bootstrap.Modal(document.getElementById('patientDetailsModal'));
+            const content = document.getElementById('patientDetailsContent');
+
+            // Show loading
+            content.innerHTML = `
+                                <div class="text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Se încarcă...</span>
+                                    </div>
+                                </div>`;
+
+            modal.show();
+
+            try {
+                const response = await fetch(`/Pacient/GetDetails/${patientId}`);
+                const data = await response.json();
+
+                content.innerHTML = `
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6 class="text-muted">Informații personale</h6>
+                                            <table class="table table-sm">
+                                                <tr>
+                                                    <td><strong>Nume complet:</strong></td>
+                                                    <td>${data.nume} ${data.prenume}</td>
+                                                </tr>
+                                                ${data.cnp ? `<tr><td><strong>CNP:</strong></td><td>${data.cnp}</td></tr>` : ''}
+                                                ${data.nrTelefon ? `<tr><td><strong>Telefon:</strong></td><td>${data.nrTelefon}</td></tr>` : ''}
+                                            </table>
+
+                                            ${data.alteDetalii ? `
+                                            <h6 class="text-muted mt-3">Alte detalii</h6>
+                                            <div class="alert alert-light">
+                                                ${data.alteDetalii}
+                                            </div>` : ''}
+
+                                            ${data.urmatoareaVizita ? `
+                                            <h6 class="text-muted mt-3">Următoarea vizită</h6>
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-calendar me-2"></i>
+                                                ${data.urmatoareaVizita}
+                                            </div>` : ''}
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <h6 class="text-muted">Medicamente asociate</h6>
+                                            ${data.medicamente.length > 0 ? `
+                                                <div class="d-flex flex-wrap gap-1 mb-3">
+                                                    ${data.medicamente.map(m => `<span class="badge bg-info">${m.nume}</span>`).join('')}
+                                                </div>
+                                            ` : '<p class="text-muted">Nu are medicamente asociate</p>'}
+                                        </div>
+                                    </div>
+
+                                    ${data.retete.length > 0 ? `
+                                    <div class="row mt-3">
+                                        <div class="col">
+                                            <h6 class="text-muted">Rețete recente (ultimele 5)</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Data</th>
+                                                            <th>Medicament</th>
+                                                            <th>Serie</th>
+                                                            <th>Nr. rețetă</th>
+                                                            <th>Următoarea vizită</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${data.retete.slice(0, 5).map(r => `
+                                                            <tr>
+                                                                <td>${r.data}</td>
+                                                                <td><span class="badge bg-light text-dark">${r.medicament}</span></td>
+                                                                <td>${r.serie || '-'}</td>
+                                                                <td>${r.nrReteta || '-'}</td>
+                                                                <td>${r.dataUrmatoareiVizite || '-'}</td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ` : ''}`;
+
+            } catch (error) {
+                content.innerHTML = `
+                                    <div class="alert alert-danger">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Eroare la încărcarea datelor pacientului.
+                                    </div>`;
+            }
+        }
     </script>
 }
+
+<style>
+    /* Stiluri pentru elementele de medicamente mai vizibile */
+    .medicament-item {
+        transition: all 0.2s ease;
+        cursor: pointer;
+        background-color: #f8f9fa;
+        border: 2px solid #dee2e6 !important;
+    }
+
+        .medicament-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #adb5bd !important;
+        }
+
+        .medicament-item.selected {
+            border-color: #198754 !important;
+            background-color: #f8fff9;
+            box-shadow: 0 4px 12px rgba(25, 135, 84, 0.2);
+        }
+
+        .medicament-item .form-check {
+            margin-bottom: 0;
+        }
+
+        .medicament-item .form-check-input {
+            width: 1.4em;
+            height: 1.4em;
+            margin-top: 0.2em;
+            cursor: pointer;
+        }
+
+            .medicament-item .form-check-input:checked {
+                background-color: #198754;
+                border-color: #198754;
+            }
+
+        .medicament-item .form-check-label {
+            cursor: pointer;
+            padding-left: 0.8rem;
+            font-size: 0.95rem;
+        }
+
+            .medicament-item .form-check-label:hover {
+                color: #198754;
+            }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .card-header h5, .card-header h6 {
+        color: #495057;
+    }
+
+    .text-danger {
+        font-size: 0.875em;
+    }
+
+    .form-text {
+        font-size: 0.8em;
+        color: #6c757d;
+    }
+
+    .alert-info, .alert-warning {
+        border-left: 4px solid #0dcaf0;
+    }
+
+    .alert-warning {
+        border-left-color: #ffc107;
+    }
+
+    /* Custom scrollbar for medicines list */
+    #medicamenteList {
+        scrollbar-width: thin;
+        scrollbar-color: #dee2e6 transparent;
+    }
+
+        #medicamenteList::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #medicamenteList::-webkit-scrollbar-track {
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        #medicamenteList::-webkit-scrollbar-thumb {
+            background-color: #dee2e6;
+            border-radius: 4px;
+        }
+
+            #medicamenteList::-webkit-scrollbar-thumb:hover {
+                background-color: #adb5bd;
+            }
+
+    /* Selected count badge animation */
+    #selectedCount {
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .patient-row:hover {
+        background-color: #f8f9fa;
+    }
+
+    .avatar-badge {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .badge.bg-light {
+        border: 1px solid #dee2e6;
+    }
+
+    .btn-group .btn {
+        border-radius: 0.25rem !important;
+    }
+
+        .btn-group .btn + .btn {
+            margin-left: 2px;
+        }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #495057;
+    }
+
+    .table td {
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+</style>

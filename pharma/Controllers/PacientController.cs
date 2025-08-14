@@ -220,6 +220,7 @@ namespace pharma.Controllers
             return View(model);
         }
 
+        // MODIFICAT: Metoda pentru modal în loc de pagină separată
         [HttpGet]
         public IActionResult GetDetails(int id)
         {
@@ -232,6 +233,12 @@ namespace pharma.Controllers
 
             if (pacient == null)
                 return NotFound();
+
+            // Găsim următoarea vizită din rețete (nu din pacient direct)
+            var urmatoareaVizita = pacient.Retete
+                .Where(r => r.DataUrmatoareiVizite.HasValue)
+                .OrderBy(r => r.DataUrmatoareiVizite.Value)
+                .FirstOrDefault();
 
             return Json(new
             {
@@ -254,7 +261,9 @@ namespace pharma.Controllers
                     serie = r.Serie,
                     nrReteta = r.NrReteta,
                     dataUrmatoareiVizite = r.DataUrmatoareiVizite?.ToString("dd.MM.yyyy")
-                }).OrderByDescending(r => r.data).ToList()
+                }).OrderByDescending(r => r.data).ToList(),
+                // Pentru afișarea următoarei vizite în modal
+                urmatoareaVizita = urmatoareaVizita?.DataUrmatoareiVizite?.ToString("dd.MM.yyyy")
             });
         }
 

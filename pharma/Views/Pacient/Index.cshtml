@@ -17,29 +17,29 @@
     </a>
 </div>
 
-<!-- Advanced Search & Filters -->
+<!-- Căutare și filtrare -->
 <div class="card mb-4">
     <div class="card-header">
         <h6 class="mb-0">
             <i class="fas fa-search me-2"></i>
-            Căutare și filtrare avansată
+            Căutare și filtrare
         </h6>
     </div>
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label for="searchGeneral" class="form-label">Căutare generală</label>
-                <input type="text" id="searchGeneral" class="form-control" 
+                <input type="text" id="searchGeneral" class="form-control"
                        placeholder="Nume, prenume, CNP, telefon...">
             </div>
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <label for="filterMedicament" class="form-label">Medicament</label>
                 <select id="filterMedicament" class="form-select">
                     <option value="">Toate medicamentele</option>
                     @{
                         var allMedicaments = Model.SelectMany(p => p.PacientMedicamente.Select(pm => pm.Medicament))
-                                                 .Distinct()
-                                                 .OrderBy(m => m.Nume);
+                        .Distinct()
+                        .OrderBy(m => m.Nume);
                     }
                     @foreach (var med in allMedicaments)
                     {
@@ -53,15 +53,6 @@
                     <option value="">Toți pacienții</option>
                     <option value="cu-retete">Cu rețete</option>
                     <option value="fara-retete">Fără rețete</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label for="filterVizite" class="form-label">Vizite programate</label>
-                <select id="filterVizite" class="form-select">
-                    <option value="">Toate</option>
-                    <option value="programate">Cu vizite programate</option>
-                    <option value="intarziate">Vizite întârziate</option>
-                    <option value="astazi">Vizite azi</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -81,7 +72,7 @@
                 </button>
             </div>
         </div>
-        
+
         <!-- Quick stats -->
         <div class="row mt-3">
             <div class="col">
@@ -94,12 +85,6 @@
                         <span class="d-block h6 mb-0" id="statsCuRetete">@Model.Count(p => p.Retete.Any())</span>
                         <small>Cu rețete</small>
                     </div>
-                    <div class="badge bg-warning p-2">
-                        <span class="d-block h6 mb-0" id="statsIntarziate">
-                            @Model.Count(p => p.Retete.Any(r => r.DataUrmatoareiVizite.HasValue && r.DataUrmatoareiVizite.Value < DateTime.Now))
-                        </span>
-                        <small>Vizite întârziate</small>
-                    </div>
                     <div class="badge bg-info p-2">
                         <span class="d-block h6 mb-0" id="statsVisible">@Model.Count()</span>
                         <small>Afișați</small>
@@ -110,217 +95,165 @@
     </div>
 </div>
 
-<!-- Patients Grid -->
-<div class="row" id="patientsGrid">
-    @foreach (var pacient in Model)
-    {
-        
-            var urmatoareaVizita = pacient.Retete
-                .Where(r => r.DataUrmatoareiVizite.HasValue)
-                .OrderBy(r => r.DataUrmatoareiVizite.Value)
-                .FirstOrDefault();
-            var isOverdue = urmatoareaVizita?.DataUrmatoareiVizite < DateTime.Now;
-            var isToday = urmatoareaVizita?.DataUrmatoareiVizite?.Date == DateTime.Today;
-       
-        
-        <div class="col-xl-3 col-lg-4 col-md-6 mb-4 patient-card" 
-             data-id="@pacient.Id"
-             data-nume="@pacient.Nume.ToLower()"
-             data-prenume="@pacient.Prenume.ToLower()"
-             data-cnp="@(pacient.CNP ?? "")"
-             data-telefon="@(pacient.NrTelefon ?? "")"
-             data-medicamente="@string.Join(",", pacient.PacientMedicamente.Select(pm => pm.MedicamentId))"
-             data-retete-count="@pacient.Retete.Count"
-             data-next-visit="@(urmatoareaVizita?.DataUrmatoareiVizite?.ToString("yyyy-MM-dd") ?? "")"
-             data-has-retete="@(pacient.Retete.Any() ? "true" : "false")">
-            
-            <div class="card h-100 patient-card-inner @(isOverdue == true ? "border-danger" : isToday == true ? "border-warning" : "")">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="patient-avatar">
-                            <span class="badge bg-primary rounded-pill avatar-badge">
-                                @pacient.Nume.Substring(0, 1)@pacient.Prenume.Substring(0, 1)
-                            </span>
-                        </div>
-                        <div class="dropdown">
-                            <button class="btn btn-link btn-sm text-muted" data-bs-toggle="dropdown">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <button class="dropdown-item" onclick="showPatientDetails(@pacient.Id)">
-                                        <i class="fas fa-eye me-2"></i>Vezi detalii
-                                    </button>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-action="Edit" asp-route-id="@pacient.Id">
-                                        <i class="fas fa-edit me-2"></i>Editează
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <button class="dropdown-item text-danger" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#deleteModal_@pacient.Id">
-                                        <i class="fas fa-trash me-2"></i>Șterge
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <h5 class="card-title mb-2">@pacient.Nume @pacient.Prenume</h5>
-                    
-                    @if (!string.IsNullOrEmpty(pacient.CNP))
+<!-- Lista pacienți în format tabel -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="patientsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th width="5%"><i class="fas fa-user"></i></th>
+                        <th width="25%">Pacient</th>
+                        <th width="15%">Contact</th>
+                        <th width="20%">Medicamente</th>
+                        <th width="10%" class="text-center">Rețete</th>
+                        <th width="15%">Următoarea vizită</th>
+                        <th width="10%" class="text-center">Acțiuni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var pacient in Model)
                     {
-                        <p class="text-muted small mb-1">
-                            <i class="fas fa-id-card me-1"></i>CNP: @pacient.CNP
-                        </p>
-                    }
-                    
-                    @if (!string.IsNullOrEmpty(pacient.NrTelefon))
-                    {
-                        <p class="text-muted small mb-2">
-                            <i class="fas fa-phone me-1"></i>@pacient.NrTelefon
-                        </p>
-                    }
-                    
-                    <div class="row text-center mb-3">
-                        <div class="col-6">
-                            <div class="border-end">
-                                <div class="h6 mb-0 text-primary">@pacient.PacientMedicamente.Count</div>
-                                <small class="text-muted">Medicamente</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="h6 mb-0 text-success">@pacient.Retete.Count</div>
-                            <small class="text-muted">Rețete</small>
-                        </div>
-                    </div>
-                    
-                    @if (pacient.PacientMedicamente.Any())
-                    {
-                        <div class="mb-3">
-                            <div class="d-flex flex-wrap gap-1">
-                                @foreach (var pm in pacient.PacientMedicamente.Take(3))
-                                {
-                                    <span class="badge bg-light text-dark small">@pm.Medicament.Nume</span>
-                                }
-                                @if (pacient.PacientMedicamente.Count > 3)
-                                {
-                                    <span class="badge bg-secondary small">+@(pacient.PacientMedicamente.Count - 3)</span>
-                                }
-                            </div>
-                        </div>
-                    }
-                    
-                    @if (urmatoareaVizita != null)
-                    {
-                        <div class="alert @(isOverdue == true ? "alert-danger" : isToday == true ? "alert-warning" : "alert-info") py-2 small">
-                            <i class="fas fa-calendar me-1"></i>
-                            <strong>Următoarea vizită:</strong><br>
-                            @urmatoareaVizita.DataUrmatoareiVizite?.ToString("dd.MM.yyyy")
-                            @if (isOverdue == true)
-                            {
-                                <span class="text-danger ms-1">(Întârziată)</span>
-                            }
-                            else if (isToday == true)
-                            {
-                                <span class="text-warning ms-1">(Astăzi)</span>
-                            }
-                        </div>
-                    }
-                </div>
-                
-                <div class="card-footer bg-transparent">
-                    <div class="d-flex justify-content-between">
-                        <button class="btn btn-outline-primary btn-sm" onclick="showPatientDetails(@pacient.Id)">
-                            <i class="fas fa-eye me-1"></i>Detalii
-                        </button>
-                        @if (pacient.PacientMedicamente.Any())
-                        {
-                            <div class="btn-group" role="group">
-                                @foreach (var pm in pacient.PacientMedicamente.Take(2))
-                                {
-                                    <a asp-controller="Reteta" asp-action="Create" asp-route-medId="@pm.MedicamentId"
-                                       class="btn btn-success btn-sm" title="Rețetă @pm.Medicament.Nume">
-                                        <i class="fas fa-file-medical"></i>
-                                    </a>
-                                }
-                                @if (pacient.PacientMedicamente.Count > 2)
-                                {
-                                    <button class="btn btn-success btn-sm dropdown-toggle" 
-                                            data-bs-toggle="dropdown" title="Mai multe medicamente">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        @foreach (var pm in pacient.PacientMedicamente.Skip(2))
-                                        {
-                                            <li>
-                                                <a class="dropdown-item" 
-                                                   asp-controller="Reteta" 
-                                                   asp-action="Create" 
-                                                   asp-route-medId="@pm.MedicamentId">
-                                                    <i class="fas fa-file-medical me-2"></i>@pm.Medicament.Nume
-                                                </a>
-                                            </li>
-                                        }
-                                    </ul>
-                                }
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
+                        var urmatoareaVizita = pacient.Retete
+                        .Where(r => r.DataUrmatoareiVizite.HasValue)
+                        .OrderBy(r => r.DataUrmatoareiVizite.Value)
+                        .FirstOrDefault();
 
-        <!-- Delete Modal -->
-        <div class="modal fade" id="deleteModal_@pacient.Id" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title text-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Confirmare ștergere
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Vrei să ștergi definitiv pacientul <strong>@pacient.Nume @pacient.Prenume</strong>?</p>
-                        
-                        @if (pacient.Retete.Any() || pacient.PacientMedicamente.Any())
-                        {
-                            <div class="alert alert-warning">
-                                <strong>Atenție!</strong> Această acțiune va șterge și:
-                                <ul class="mb-0 mt-2">
-                                    @if (pacient.Retete.Any())
+                        <tr class="patient-row"
+                            data-id="@pacient.Id"
+                            data-nume="@pacient.Nume.ToLower()"
+                            data-prenume="@pacient.Prenume.ToLower()"
+                            data-cnp="@(pacient.CNP ?? "")"
+                            data-telefon="@(pacient.NrTelefon ?? "")"
+                            data-medicamente="@string.Join(",", pacient.PacientMedicamente.Select(pm => pm.MedicamentId))"
+                            data-retete-count="@pacient.Retete.Count"
+                            data-next-visit="@(urmatoareaVizita?.DataUrmatoareiVizite?.ToString("yyyy-MM-dd") ?? "")"
+                            data-has-retete="@(pacient.Retete.Any() ? "true" : "false")">
+
+                            <!-- Avatar -->
+                            <td>
+                                <span class="badge bg-primary rounded-pill avatar-badge">
+                                    @pacient.Nume.Substring(0, 1)@pacient.Prenume.Substring(0, 1)
+                                </span>
+                            </td>
+
+                            <!-- Pacient Info -->
+                            <td>
+                                <div>
+                                    <strong>@pacient.Nume @pacient.Prenume</strong>
+                                    @if (!string.IsNullOrEmpty(pacient.CNP))
                                     {
-                                        <li>@pacient.Retete.Count rețete</li>
+                                        <br>
+                                        <small class="text-muted">CNP: @pacient.CNP</small>
                                     }
-                                    @if (pacient.PacientMedicamente.Any())
-                                    {
-                                        <li>@pacient.PacientMedicamente.Count asocieri cu medicamente</li>
-                                    }
-                                </ul>
-                            </div>
-                        }
-                        
-                        <p class="text-danger"><strong>Această acțiune nu poate fi anulată!</strong></p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
-                        <form asp-action="Delete" method="post" class="d-inline">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@pacient.Id" />
-                            <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash me-1"></i> Șterge definitiv
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+                                </div>
+                            </td>
+
+                            <!-- Contact -->
+                            <td>
+                                @if (!string.IsNullOrEmpty(pacient.NrTelefon))
+                                {
+                                    <i class="fas fa-phone me-1"></i>
+                                    @pacient.NrTelefon
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+
+                            <!-- Medicamente -->
+                            <td>
+                                @if (pacient.PacientMedicamente.Any())
+                                {
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach (var pm in pacient.PacientMedicamente.Take(2))
+                                        {
+                                            <span class="badge bg-light text-dark small">@pm.Medicament.Nume</span>
+                                        }
+                                        @if (pacient.PacientMedicamente.Count > 2)
+                                        {
+                                            <span class="badge bg-secondary small">+@(pacient.PacientMedicamente.Count - 2)</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Fără medicamente</span>
+                                }
+                            </td>
+
+                            <!-- Rețete Count -->
+                            <td class="text-center">
+                                <span class="badge @(pacient.Retete.Count > 0 ? "bg-success" : "bg-secondary")">
+                                    @pacient.Retete.Count
+                                </span>
+                            </td>
+
+                            <!-- Următoarea vizită - SIMPLIFICAT -->
+                            <td>
+                                @if (urmatoareaVizita != null)
+                                {
+                                    <span class="text-info">
+                                        @urmatoareaVizita.DataUrmatoareiVizite?.ToString("dd.MM.yyyy")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+
+                            <!-- Acțiuni -->
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-outline-primary btn-sm"
+                                            onclick="showPatientDetails(@pacient.Id)"
+                                            title="Vezi detalii">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <a asp-action="Edit" asp-route-id="@pacient.Id"
+                                       class="btn btn-outline-secondary btn-sm"
+                                       title="Editează">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-success btn-sm dropdown-toggle"
+                                                data-bs-toggle="dropdown" title="Rețetă nouă">
+                                            <i class="fas fa-file-medical"></i>
+                                        </button>
+                                        @if (pacient.PacientMedicamente.Any())
+                                        {
+                                            <ul class="dropdown-menu">
+                                                @foreach (var pm in pacient.PacientMedicamente)
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                           asp-controller="Reteta"
+                                                           asp-action="Create"
+                                                           asp-route-pacientId="@pacient.Id"
+                                                           asp-route-medicamentId="@pm.MedicamentId">
+                                                            <i class="fas fa-pills me-2"></i>@pm.Medicament.Nume
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        }
+                                        else
+                                        {
+                                            <ul class="dropdown-menu">
+                                                <li><span class="dropdown-item-text text-muted">Nu are medicamente asociate</span></li>
+                                            </ul>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
-    }
+    </div>
 </div>
 
 <!-- No results message -->
@@ -330,7 +263,7 @@
     <p class="text-muted">Încearcă să modifici criteriile de căutare</p>
 </div>
 
-<!-- Patient Details Modal -->
+<!-- Modal pentru detalii pacient -->
 <div class="modal fade" id="patientDetailsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -364,11 +297,10 @@
             const searchGeneral = document.getElementById('searchGeneral');
             const filterMedicament = document.getElementById('filterMedicament');
             const filterRetete = document.getElementById('filterRetete');
-            const filterVizite = document.getElementById('filterVizite');
             const sortBy = document.getElementById('sortBy');
             const clearFilters = document.getElementById('clearFilters');
-            const patientCards = document.querySelectorAll('.patient-card');
-            const patientsGrid = document.getElementById('patientsGrid');
+            const patientRows = document.querySelectorAll('.patient-row');
+            const patientsTable = document.getElementById('patientsTable');
             const noResults = document.getElementById('noResults');
             const statsVisible = document.getElementById('statsVisible');
 
@@ -376,25 +308,23 @@
                 const searchTerm = searchGeneral.value.toLowerCase();
                 const medicamentId = filterMedicament.value;
                 const reteteFiler = filterRetete.value;
-                const viziteFilter = filterVizite.value;
                 const sortValue = sortBy.value;
-                const today = new Date().toISOString().split('T')[0];
 
-                let visibleCards = [];
+                let visibleRows = [];
 
-                patientCards.forEach(card => {
+                patientRows.forEach(row => {
                     let visible = true;
 
                     // General search
                     if (searchTerm) {
-                        const nume = card.dataset.nume;
-                        const prenume = card.dataset.prenume;
-                        const cnp = card.dataset.cnp;
-                        const telefon = card.dataset.telefon;
-                        
-                        if (!nume.includes(searchTerm) && 
-                            !prenume.includes(searchTerm) && 
-                            !cnp.includes(searchTerm) && 
+                        const nume = row.dataset.nume;
+                        const prenume = row.dataset.prenume;
+                        const cnp = row.dataset.cnp;
+                        const telefon = row.dataset.telefon;
+
+                        if (!nume.includes(searchTerm) &&
+                            !prenume.includes(searchTerm) &&
+                            !cnp.includes(searchTerm) &&
                             !telefon.includes(searchTerm)) {
                             visible = false;
                         }
@@ -402,7 +332,7 @@
 
                     // Medicament filter
                     if (medicamentId && visible) {
-                        const medicamente = card.dataset.medicamente.split(',');
+                        const medicamente = row.dataset.medicamente.split(',');
                         if (!medicamente.includes(medicamentId)) {
                             visible = false;
                         }
@@ -410,35 +340,23 @@
 
                     // Retete filter
                     if (reteteFiler && visible) {
-                        const hasRetete = card.dataset.hasRetete === 'true';
+                        const hasRetete = row.dataset.hasRetete === 'true';
                         if ((reteteFiler === 'cu-retete' && !hasRetete) ||
                             (reteteFiler === 'fara-retete' && hasRetete)) {
                             visible = false;
                         }
                     }
 
-                    // Vizite filter
-                    if (viziteFilter && visible) {
-                        const nextVisit = card.dataset.nextVisit;
-                        if (viziteFilter === 'programate' && !nextVisit) {
-                            visible = false;
-                        } else if (viziteFilter === 'intarziate' && (!nextVisit || nextVisit >= today)) {
-                            visible = false;
-                        } else if (viziteFilter === 'astazi' && nextVisit !== today) {
-                            visible = false;
-                        }
-                    }
-
                     if (visible) {
-                        card.classList.remove('d-none');
-                        visibleCards.push(card);
+                        row.classList.remove('d-none');
+                        visibleRows.push(row);
                     } else {
-                        card.classList.add('d-none');
+                        row.classList.add('d-none');
                     }
                 });
 
-                // Sort visible cards
-                visibleCards.sort((a, b) => {
+                // Sort visible rows
+                visibleRows.sort((a, b) => {
                     switch (sortValue) {
                         case 'nume-desc':
                             return (b.dataset.nume + b.dataset.prenume).localeCompare(a.dataset.nume + a.dataset.prenume);
@@ -453,21 +371,22 @@
                     }
                 });
 
-                // Reorder cards in DOM
-                visibleCards.forEach(card => {
-                    patientsGrid.appendChild(card);
+                // Reorder rows in DOM
+                const tbody = patientsTable.querySelector('tbody');
+                visibleRows.forEach(row => {
+                    tbody.appendChild(row);
                 });
 
                 // Update visible count
-                statsVisible.textContent = visibleCards.length;
+                statsVisible.textContent = visibleRows.length;
 
                 // Show/hide no results
-                if (visibleCards.length === 0) {
+                if (visibleRows.length === 0) {
                     noResults.classList.remove('d-none');
-                    patientsGrid.classList.add('d-none');
+                    patientsTable.classList.add('d-none');
                 } else {
                     noResults.classList.add('d-none');
-                    patientsGrid.classList.remove('d-none');
+                    patientsTable.classList.remove('d-none');
                 }
             }
 
@@ -475,14 +394,12 @@
             searchGeneral.addEventListener('input', filterAndSort);
             filterMedicament.addEventListener('change', filterAndSort);
             filterRetete.addEventListener('change', filterAndSort);
-            filterVizite.addEventListener('change', filterAndSort);
             sortBy.addEventListener('change', filterAndSort);
 
-            clearFilters.addEventListener('click', function() {
+            clearFilters.addEventListener('click', function () {
                 searchGeneral.value = '';
                 filterMedicament.value = '';
                 filterRetete.value = '';
-                filterVizite.value = '';
                 sortBy.value = 'nume-asc';
                 filterAndSort();
             });
@@ -491,7 +408,7 @@
             filterAndSort();
         });
 
-        // Show patient details function
+        // Funcție pentru afișarea detaliilor în modal
         async function showPatientDetails(patientId) {
             const modal = new bootstrap.Modal(document.getElementById('patientDetailsModal'));
             const content = document.getElementById('patientDetailsContent');
@@ -499,11 +416,11 @@
 
             // Show loading
             content.innerHTML = `
-                <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Se încarcă...</span>
-                    </div>
-                </div>`;
+                                <div class="text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Se încarcă...</span>
+                                    </div>
+                                </div>`;
 
             modal.show();
 
@@ -512,66 +429,73 @@
                 const data = await response.json();
 
                 content.innerHTML = `
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="text-muted">Informații personale</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <td><strong>Nume complet:</strong></td>
-                                    <td>${data.nume} ${data.prenume}</td>
-                                </tr>
-                                ${data.cnp ? `<tr><td><strong>CNP:</strong></td><td>${data.cnp}</td></tr>` : ''}
-                                ${data.nrTelefon ? `<tr><td><strong>Telefon:</strong></td><td>${data.nrTelefon}</td></tr>` : ''}
-                            </table>
-                            
-                            ${data.alteDetalii ? `
-                            <h6 class="text-muted mt-3">Alte detalii</h6>
-                            <div class="alert alert-light">
-                                ${data.alteDetalii}
-                            </div>` : ''}
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <h6 class="text-muted">Medicamente asociate</h6>
-                            ${data.medicamente.length > 0 ? `
-                                <div class="d-flex flex-wrap gap-1 mb-3">
-                                    ${data.medicamente.map(m => `<span class="badge bg-info">${m.nume}</span>`).join('')}
-                                </div>
-                            ` : '<p class="text-muted">Nu are medicamente asociate</p>'}
-                        </div>
-                    </div>
-                    
-                    ${data.retete.length > 0 ? `
-                    <div class="row mt-3">
-                        <div class="col">
-                            <h6 class="text-muted">Rețete recente (ultimele 5)</h6>
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Data</th>
-                                            <th>Medicament</th>
-                                            <th>Serie</th>
-                                            <th>Nr. rețetă</th>
-                                            <th>Următoarea vizită</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${data.retete.slice(0, 5).map(r => `
-                                            <tr>
-                                                <td>${r.data}</td>
-                                                <td><span class="badge bg-light text-dark">${r.medicament}</span></td>
-                                                <td>${r.serie || '-'}</td>
-                                                <td>${r.nrReteta || '-'}</td>
-                                                <td>${r.dataUrmatoareiVizite || '-'}</td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}`;
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6 class="text-muted">Informații personale</h6>
+                                            <table class="table table-sm">
+                                                <tr>
+                                                    <td><strong>Nume complet:</strong></td>
+                                                    <td>${data.nume} ${data.prenume}</td>
+                                                </tr>
+                                                ${data.cnp ? `<tr><td><strong>CNP:</strong></td><td>${data.cnp}</td></tr>` : ''}
+                                                ${data.nrTelefon ? `<tr><td><strong>Telefon:</strong></td><td>${data.nrTelefon}</td></tr>` : ''}
+                                            </table>
+
+                                            ${data.alteDetalii ? `
+                                            <h6 class="text-muted mt-3">Alte detalii</h6>
+                                            <div class="alert alert-light">
+                                                ${data.alteDetalii}
+                                            </div>` : ''}
+
+                                            ${data.urmatoareaVizita ? `
+                                            <h6 class="text-muted mt-3">Următoarea vizită</h6>
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-calendar me-2"></i>
+                                                ${data.urmatoareaVizita}
+                                            </div>` : ''}
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <h6 class="text-muted">Medicamente asociate</h6>
+                                            ${data.medicamente.length > 0 ? `
+                                                <div class="d-flex flex-wrap gap-1 mb-3">
+                                                    ${data.medicamente.map(m => `<span class="badge bg-info">${m.nume}</span>`).join('')}
+                                                </div>
+                                            ` : '<p class="text-muted">Nu are medicamente asociate</p>'}
+                                        </div>
+                                    </div>
+
+                                    ${data.retete.length > 0 ? `
+                                    <div class="row mt-3">
+                                        <div class="col">
+                                            <h6 class="text-muted">Rețete recente (ultimele 5)</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Data</th>
+                                                            <th>Medicament</th>
+                                                            <th>Serie</th>
+                                                            <th>Nr. rețetă</th>
+                                                            <th>Următoarea vizită</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${data.retete.slice(0, 5).map(r => `
+                                                            <tr>
+                                                                <td>${r.data}</td>
+                                                                <td><span class="badge bg-light text-dark">${r.medicament}</span></td>
+                                                                <td>${r.serie || '-'}</td>
+                                                                <td>${r.nrReteta || '-'}</td>
+                                                                <td>${r.dataUrmatoareiVizite || '-'}</td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ` : ''}`;
 
                 editBtn.onclick = () => {
                     window.location.href = `/Pacient/Edit/${patientId}`;
@@ -579,53 +503,51 @@
 
             } catch (error) {
                 content.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Eroare la încărcarea datelor pacientului.
-                    </div>`;
+                                    <div class="alert alert-danger">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Eroare la încărcarea datelor pacientului.
+                                    </div>`;
             }
         }
     </script>
 }
 
 <style>
-    .patient-card-inner {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border: 2px solid transparent;
+    .patient-row:hover {
+        background-color: #f8f9fa;
     }
-    
-    .patient-card-inner:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-    
+
     .avatar-badge {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1rem;
+        font-size: 0.8rem;
         font-weight: bold;
     }
-    
-    .border-danger {
-        border-color: #dc3545 !important;
-    }
-    
-    .border-warning {
-        border-color: #ffc107 !important;
-    }
-    
+
     .badge.bg-light {
         border: 1px solid #dee2e6;
     }
-    
-    .patient-card .btn-group .btn {
+
+    .btn-group .btn {
         border-radius: 0.25rem !important;
     }
-    
-    .patient-card .btn-group .btn + .btn {
-        margin-left: 2px;
+
+        .btn-group .btn + .btn {
+            margin-left: 2px;
+        }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #495057;
+    }
+
+    .table td {
+        vertical-align: middle;
+        font-size: 0.9rem;
     }
 </style>

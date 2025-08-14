@@ -16,7 +16,7 @@
 
 <form asp-action="Create" method="post" novalidate>
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-lg-7">
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
@@ -85,7 +85,8 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
+        <!-- Medicamente asociate cu checkbox-uri mai vizibile -->
+        <div class="col-lg-5">
             <div class="card">
                 <div class="card-header">
                     <h6 class="mb-0">
@@ -97,42 +98,48 @@
                     @if (Model.AvailableMedicamente.Any())
                     {
                         <div class="mb-3">
-                            <input type="text" id="searchMedicamente" class="form-control form-control-sm"
+                            <input type="text" id="searchMedicamente" class="form-control"
                                    placeholder="Caută medicamente...">
                         </div>
 
-                        <div id="medicamenteList" style="max-height: 300px; overflow-y: auto;">
+                        <!-- Lista de medicamente cu checkbox-uri mari -->
+                        <div id="medicamenteList" style="max-height: 400px; overflow-y: auto;">
                             @foreach (var medicament in Model.AvailableMedicamente)
                             {
-                                <div class="form-check medicament-item" data-name="@medicament.Nume.ToLower()">
-                                    <input class="form-check-input"
-                                           type="checkbox"
-                                           name="SelectedMedicamentIds"
-                                           value="@medicament.Id"
-                                           id="med_@medicament.Id">
-                                    <label class="form-check-label" for="med_@medicament.Id">
-                                        @medicament.Nume
-                                    </label>
+                                <div class="medicament-item mb-3 p-3 border rounded" data-name="@medicament.Nume.ToLower()">
+                                    <div class="form-check">
+                                        <input class="form-check-input medicament-checkbox"
+                                               type="checkbox"
+                                               name="SelectedMedicamentIds"
+                                               value="@medicament.Id"
+                                               id="med_@medicament.Id">
+                                        <label class="form-check-label w-100 cursor-pointer" for="med_@medicament.Id">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-pills me-3 text-primary"></i>
+                                                <div>
+                                                    <strong class="d-block">@medicament.Nume</strong>
+                                                    <small class="text-muted">Selectează pentru asociere</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
                             }
                         </div>
 
-                        <div class="mt-3">
-                            <button type="button" id="selectAllMed" class="btn btn-outline-primary btn-sm me-2">
-                                Selectează toate
-                            </button>
-                            <button type="button" id="deselectAllMed" class="btn btn-outline-secondary btn-sm">
-                                Deselectează toate
-                            </button>
+                        <!-- Counter pentru medicamente selectate -->
+                        <div class="mt-3 text-center">
+                            <span id="selectedCount" class="badge bg-info">0 selectate</span>
                         </div>
                     }
                     else
                     {
-                        <div class="text-center py-3">
-                            <i class="fas fa-pills fa-2x text-muted mb-2"></i>
-                            <p class="text-muted mb-0">Nu există medicamente în sistem</p>
-                            <a asp-controller="Medicament" asp-action="Create" class="btn btn-primary btn-sm mt-2">
-                                Adaugă medicament
+                        <div class="text-center py-4">
+                            <i class="fas fa-pills fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">Nu există medicamente în sistem</h6>
+                            <p class="text-muted small mb-3">Trebuie să adaugi medicamente înainte de a putea crea pacienți</p>
+                            <a asp-controller="Medicament" asp-action="Create" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i> Adaugă primul medicament
                             </a>
                         </div>
                     }
@@ -178,38 +185,6 @@
     </div>
 </form>
 
-<!-- Duplicate Warning Modal -->
-<div class="modal fade" id="duplicateWarningModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Posibil duplicat
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-warning">
-                    <strong>Atenție!</strong> Există deja un pacient cu același nume în sistem.
-                </div>
-                <p>Pentru a evita duplicatele, te rugăm să:</p>
-                <ul>
-                    <li>Verifici dacă pacientul nu există già în sistem</li>
-                    <li>Adaugi CNP-ul pentru diferențiere</li>
-                    <li>Verifici ortografia numelui</li>
-                </ul>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Am înțeles</button>
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="document.getElementById('CNP').focus()">
-                    Adaugă CNP
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
@@ -218,8 +193,8 @@
             const prenumeInput = document.getElementById('prenumeInput');
             const searchMedicamente = document.getElementById('searchMedicamente');
             const medicamenteItems = document.querySelectorAll('.medicament-item');
-            const selectAllBtn = document.getElementById('selectAllMed');
-            const deselectAllBtn = document.getElementById('deselectAllMed');
+            const medicamenteCheckboxes = document.querySelectorAll('.medicament-checkbox');
+            const selectedCount = document.getElementById('selectedCount');
 
             // Capitalize first letter functionality
             function capitalizeFirstLetter(input) {
@@ -248,7 +223,7 @@
             }
 
             // Search medicamente functionality
-            if (searchMedicamente) {
+            if (searchMedicamente && medicamenteItems.length > 0) {
                 searchMedicamente.addEventListener('input', function () {
                     const searchTerm = this.value.toLowerCase();
 
@@ -260,26 +235,31 @@
                             item.style.display = 'none';
                         }
                     });
+
+                    updateSelectedCount();
                 });
             }
 
-            // Select/Deselect all functionality
-            if (selectAllBtn) {
-                selectAllBtn.addEventListener('click', function () {
-                    medicamenteItems.forEach(item => {
-                        if (item.style.display !== 'none') {
-                            const checkbox = item.querySelector('input[type="checkbox"]');
-                            checkbox.checked = true;
+            // Counter pentru medicamente selectate
+            function updateSelectedCount() {
+                if (selectedCount && medicamenteCheckboxes.length > 0) {
+                    const checked = Array.from(medicamenteCheckboxes).filter(cb => cb.checked).length;
+                    selectedCount.textContent = `${checked} selectate`;
+                    selectedCount.className = checked > 0 ? 'badge bg-success' : 'badge bg-info';
+                }
+            }
+
+            // Visual feedback pentru elemente selectate
+            if (medicamenteCheckboxes.length > 0) {
+                medicamenteCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function () {
+                        const item = this.closest('.medicament-item');
+                        if (this.checked) {
+                            item.classList.add('selected');
+                        } else {
+                            item.classList.remove('selected');
                         }
-                    });
-                });
-            }
-
-            if (deselectAllBtn) {
-                deselectAllBtn.addEventListener('click', function () {
-                    medicamenteItems.forEach(item => {
-                        const checkbox = item.querySelector('input[type="checkbox"]');
-                        checkbox.checked = false;
+                        updateSelectedCount();
                     });
                 });
             }
@@ -287,15 +267,11 @@
             // Form validation enhancement
             const form = document.querySelector('form');
             form.addEventListener('submit', function (e) {
-                const nume = numeInput.value.trim();
-                const prenume = prenumeInput.value.trim();
-                const cnp = cnpInput ? cnpInput.value.trim() : '';
-
-                // Check for potential duplicates client-side warning
-                if (nume && prenume && !cnp) {
-                    // This is just a warning, not blocking submission
-                    // The server will handle actual validation
-                    console.log('Submitting without CNP - server will validate for duplicates');
+                const checkedBoxes = Array.from(medicamenteCheckboxes).filter(cb => cb.checked);
+                if (checkedBoxes.length === 0) {
+                    e.preventDefault();
+                    alert('Te rog să selectezi cel puțin un medicament pentru acest pacient.');
+                    return false;
                 }
             });
 
@@ -348,40 +324,63 @@
 
                     this.value = value;
                 });
-
-                // Validate phone number format
-                telefonInput.addEventListener('blur', function () {
-                    const phonePattern = /^[\d\s\-\+\(\)]+$/;
-                    if (this.value && !phonePattern.test(this.value)) {
-                        this.setCustomValidity('Formatul numărului de telefon nu este valid');
-                    } else {
-                        this.setCustomValidity('');
-                    }
-                });
             }
+
+            // Initialize count
+            updateSelectedCount();
         });
     </script>
 }
 
 <style>
+    /* Stiluri pentru elementele de medicamente mai vizibile */
     .medicament-item {
-        padding: 0.25rem 0;
-        border-bottom: 1px solid #f8f9fa;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        background-color: #f8f9fa;
+        border: 2px solid #dee2e6 !important;
     }
 
-        .medicament-item:last-child {
-            border-bottom: none;
-        }
-
         .medicament-item:hover {
-            background-color: #f8f9fa;
-            padding-left: 0.5rem;
-            transition: all 0.2s ease;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #adb5bd !important;
         }
 
-    .form-check-input:checked {
-        background-color: #198754;
-        border-color: #198754;
+        .medicament-item.selected {
+            border-color: #198754 !important;
+            background-color: #f8fff9;
+            box-shadow: 0 4px 12px rgba(25, 135, 84, 0.2);
+        }
+
+        .medicament-item .form-check {
+            margin-bottom: 0;
+        }
+
+        .medicament-item .form-check-input {
+            width: 1.4em;
+            height: 1.4em;
+            margin-top: 0.2em;
+            cursor: pointer;
+        }
+
+            .medicament-item .form-check-input:checked {
+                background-color: #198754;
+                border-color: #198754;
+            }
+
+        .medicament-item .form-check-label {
+            cursor: pointer;
+            padding-left: 0.8rem;
+            font-size: 0.95rem;
+        }
+
+            .medicament-item .form-check-label:hover {
+                color: #198754;
+            }
+
+    .cursor-pointer {
+        cursor: pointer;
     }
 
     .card-header h5, .card-header h6 {
@@ -408,19 +407,27 @@
     }
 
         #medicamenteList::-webkit-scrollbar {
-            width: 6px;
+            width: 8px;
         }
 
         #medicamenteList::-webkit-scrollbar-track {
-            background: transparent;
+            background: #f8f9fa;
+            border-radius: 4px;
         }
 
         #medicamenteList::-webkit-scrollbar-thumb {
             background-color: #dee2e6;
-            border-radius: 3px;
+            border-radius: 4px;
         }
 
             #medicamenteList::-webkit-scrollbar-thumb:hover {
                 background-color: #adb5bd;
             }
+
+    /* Selected count badge animation */
+    #selectedCount {
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
 </style>
