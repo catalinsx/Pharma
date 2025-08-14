@@ -54,7 +54,7 @@
                                 <label asp-for="CNP" class="form-label">
                                     CNP <span class="text-muted">(opțional)</span>
                                 </label>
-                                <input asp-for="CNP" class="form-control" maxlength="13" />
+                                <input asp-for="CNP" class="form-control" maxlength="13" id="cnpInput" />
                                 <span asp-validation-for="CNP" class="text-danger"></span>
                                 <div class="form-text">13 cifre - ajută la diferențierea pacienților cu același nume</div>
                             </div>
@@ -64,22 +64,35 @@
                                 <label asp-for="NrTelefon" class="form-label">
                                     Număr de telefon <span class="text-muted">(opțional)</span>
                                 </label>
-                                <input asp-for="NrTelefon" class="form-control" placeholder="Ex: 0721234567" />
+                                <input asp-for="NrTelefon" class="form-control" id="telefonInput" placeholder="Ex: 0721234567" />
                                 <span asp-validation-for="NrTelefon" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label asp-for="AlteDetalii" class="form-label">
                             Alte detalii <span class="text-muted">(opțional)</span>
                         </label>
                         <textarea asp-for="AlteDetalii"
+                                  id="alteDetaliiInput"
                                   class="form-control"
                                   rows="4"
-                                  placeholder="Alergii, condiții medicale, observații speciale..."></textarea>
+                                  placeholder="Alergii, condiții medicale, observații speciale... (apasă Enter pentru linie nouă)"></textarea>
                         <span asp-validation-for="AlteDetalii" class="text-danger"></span>
-                        <div class="form-text">Maximum 1000 de caractere</div>
+                        <div class="form-text">
+                            <span id="charCount">0</span>/1000 caractere
+                        </div>
+                    </div>
+
+                    <!-- Butoane mutate aici sub informații personale -->
+                    <div class="d-flex justify-content-between border-top pt-3">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i> Anulează
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-1"></i> Salvează pacientul
+                        </button>
                     </div>
                 </div>
             </div>
@@ -102,25 +115,20 @@
                                    placeholder="Caută medicamente...">
                         </div>
 
-                        <!-- Lista de medicamente cu checkbox-uri mari -->
+                        <!-- Lista de medicamente cu checkbox-uri mai vizibile -->
                         <div id="medicamenteList" style="max-height: 400px; overflow-y: auto;">
                             @foreach (var medicament in Model.AvailableMedicamente)
                             {
-                                <div class="medicament-item mb-3 p-3 border rounded" data-name="@medicament.Nume.ToLower()">
+                                <div class="medicament-item mb-2 p-2 border rounded" data-name="@medicament.Nume.ToLower()">
                                     <div class="form-check">
                                         <input class="form-check-input medicament-checkbox"
                                                type="checkbox"
                                                name="SelectedMedicamentIds"
                                                value="@medicament.Id"
-                                               id="med_@medicament.Id">
-                                        <label class="form-check-label w-100 cursor-pointer" for="med_@medicament.Id">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-pills me-3 text-primary"></i>
-                                                <div>
-                                                    <strong class="d-block">@medicament.Nume</strong>
-                                                    <small class="text-muted">Selectează pentru asociere</small>
-                                                </div>
-                                            </div>
+                                               id="med_@medicament.Id"
+                                               style="width: 1.2em; height: 1.2em;">
+                                        <label class="form-check-label w-100 cursor-pointer ms-2" for="med_@medicament.Id">
+                                            <strong>@medicament.Nume</strong>
                                         </label>
                                     </div>
                                 </div>
@@ -170,19 +178,6 @@
             </div>
         </div>
     </div>
-
-    <div class="row mt-4">
-        <div class="col">
-            <div class="d-flex justify-content-between">
-                <a asp-action="Index" class="btn btn-secondary">
-                    <i class="fas fa-times me-1"></i> Anulează
-                </a>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save me-1"></i> Salvează pacientul
-                </button>
-            </div>
-        </div>
-    </div>
 </form>
 
 @section Scripts {
@@ -191,10 +186,14 @@
         document.addEventListener('DOMContentLoaded', function () {
             const numeInput = document.getElementById('numeInput');
             const prenumeInput = document.getElementById('prenumeInput');
+            const cnpInput = document.getElementById('cnpInput');
+            const telefonInput = document.getElementById('telefonInput');
+            const alteDetaliiInput = document.getElementById('alteDetaliiInput');
             const searchMedicamente = document.getElementById('searchMedicamente');
             const medicamenteItems = document.querySelectorAll('.medicament-item');
             const medicamenteCheckboxes = document.querySelectorAll('.medicament-checkbox');
             const selectedCount = document.getElementById('selectedCount');
+            const charCount = document.getElementById('charCount');
 
             // Capitalize first letter functionality
             function capitalizeFirstLetter(input) {
@@ -208,16 +207,53 @@
             if (numeInput) capitalizeFirstLetter(numeInput);
             if (prenumeInput) capitalizeFirstLetter(prenumeInput);
 
-            // CNP validation
-            const cnpInput = document.getElementById('CNP');
+            // CNP validation - only numbers
             if (cnpInput) {
                 cnpInput.addEventListener('input', function () {
-                    // Remove non-digits
                     this.value = this.value.replace(/\D/g, '');
-
-                    // Limit to 13 digits
                     if (this.value.length > 13) {
                         this.value = this.value.slice(0, 13);
+                    }
+                });
+            }
+
+            // Phone number formatting
+            if (telefonInput) {
+                telefonInput.addEventListener('input', function () {
+                    let value = this.value.replace(/\D/g, '');
+                    if (value.length > 10) {
+                        value = value.slice(0, 10);
+                    }
+                    this.value = value;
+                });
+            }
+
+            // Character counter for AlteDetalii - preserve line breaks
+            if (alteDetaliiInput && charCount) {
+                alteDetaliiInput.addEventListener('input', function () {
+                    const currentLength = this.value.length;
+                    charCount.textContent = currentLength;
+
+                    if (currentLength > 900) {
+                        charCount.parentNode.classList.add('text-warning');
+                    } else {
+                        charCount.parentNode.classList.remove('text-warning');
+                    }
+
+                    if (currentLength >= 1000) {
+                        charCount.parentNode.classList.add('text-danger');
+                        charCount.parentNode.classList.remove('text-warning');
+                    } else {
+                        charCount.parentNode.classList.remove('text-danger');
+                    }
+                });
+
+                // Preserve formatting when displaying
+                alteDetaliiInput.addEventListener('keydown', function (e) {
+                    // Allow Enter key for new lines
+                    if (e.key === 'Enter') {
+                        // Don't prevent default - let the new line be added
+                        return true;
                     }
                 });
             }
@@ -275,57 +311,6 @@
                 }
             });
 
-            // Character counter for AlteDetalii
-            const alteDetaliiInput = document.getElementById('AlteDetalii');
-            if (alteDetaliiInput) {
-                const maxLength = 1000;
-                const counter = document.createElement('div');
-                counter.className = 'form-text text-end';
-                counter.innerHTML = `<span id="charCount">0</span>/${maxLength} caractere`;
-                alteDetaliiInput.parentNode.appendChild(counter);
-
-                const charCountSpan = document.getElementById('charCount');
-
-                alteDetaliiInput.addEventListener('input', function () {
-                    const currentLength = this.value.length;
-                    charCountSpan.textContent = currentLength;
-
-                    if (currentLength > maxLength * 0.9) {
-                        charCountSpan.parentNode.classList.add('text-warning');
-                    } else {
-                        charCountSpan.parentNode.classList.remove('text-warning');
-                    }
-
-                    if (currentLength >= maxLength) {
-                        charCountSpan.parentNode.classList.add('text-danger');
-                        charCountSpan.parentNode.classList.remove('text-warning');
-                    } else {
-                        charCountSpan.parentNode.classList.remove('text-danger');
-                    }
-                });
-            }
-
-            // Phone number formatting
-            const telefonInput = document.getElementById('NrTelefon');
-            if (telefonInput) {
-                telefonInput.addEventListener('input', function () {
-                    // Remove all non-digits
-                    let value = this.value.replace(/\D/g, '');
-
-                    // Limit length
-                    if (value.length > 10) {
-                        value = value.slice(0, 10);
-                    }
-
-                    // Format as 0XXX XXX XXX
-                    if (value.length >= 4) {
-                        value = value.replace(/(\d{4})(\d{0,3})(\d{0,3})/, '$1 $2 $3').trim();
-                    }
-
-                    this.value = value;
-                });
-            }
-
             // Initialize count
             updateSelectedCount();
         });
@@ -336,48 +321,30 @@
     /* Stiluri pentru elementele de medicamente mai vizibile */
     .medicament-item {
         transition: all 0.2s ease;
-        cursor: pointer;
         background-color: #f8f9fa;
-        border: 2px solid #dee2e6 !important;
+        border: 1px solid #dee2e6 !important;
     }
 
         .medicament-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border-color: #adb5bd !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
         }
 
         .medicament-item.selected {
             border-color: #198754 !important;
-            background-color: #f8fff9;
-            box-shadow: 0 4px 12px rgba(25, 135, 84, 0.2);
+            background-color: #d1f2eb;
+            border-width: 2px !important;
         }
 
         .medicament-item .form-check {
             margin-bottom: 0;
         }
 
-        .medicament-item .form-check-input {
-            width: 1.4em;
-            height: 1.4em;
-            margin-top: 0.2em;
-            cursor: pointer;
-        }
-
-            .medicament-item .form-check-input:checked {
-                background-color: #198754;
-                border-color: #198754;
-            }
-
         .medicament-item .form-check-label {
             cursor: pointer;
-            padding-left: 0.8rem;
             font-size: 0.95rem;
         }
-
-            .medicament-item .form-check-label:hover {
-                color: #198754;
-            }
 
     .cursor-pointer {
         cursor: pointer;
@@ -429,5 +396,14 @@
         transition: all 0.3s ease;
         font-size: 0.9rem;
         padding: 0.5rem 1rem;
+    }
+
+    /* Preserve whitespace in AlteDetalii textarea */
+    #alteDetaliiInput {
+        white-space: pre-wrap;
+    }
+
+    .btn-primary.btn-lg {
+        padding: 0.5rem 1.5rem;
     }
 </style>

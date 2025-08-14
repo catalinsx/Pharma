@@ -4,319 +4,327 @@
     ViewData["Title"] = "Lista medicamente";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="mb-1">
-            <i class="fas fa-pills me-2 text-primary"></i>
-            Medicamente
-        </h2>
-        <p class="text-muted mb-0">@Model.Count() medicamente înregistrate</p>
+<!-- Header cu gradient și statistici -->
+<div class="page-header-gradient mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-2 text-white">
+                <i class="fas fa-pills me-2"></i>
+                Gestiune Medicamente
+            </h2>
+            <div class="d-flex gap-3">
+                <div class="stat-card-mini">
+                    <div class="stat-number">@Model.Count()</div>
+                    <div class="stat-label">Total medicamente</div>
+                </div>
+                <div class="stat-card-mini">
+                    <div class="stat-number">@Model.Sum(m => m.PacientMedicamente?.Count ?? 0)</div>
+                    <div class="stat-label">Asocieri pacienți</div>
+                </div>
+                <div class="stat-card-mini">
+                    <div class="stat-number">@Model.Sum(m => m.Retete?.Count ?? 0)</div>
+                    <div class="stat-label">Total rețete</div>
+                </div>
+            </div>
+        </div>
+        <a asp-action="Create" class="btn btn-light btn-lg shadow-sm">
+            <i class="fas fa-plus-circle me-2"></i> Medicament nou
+        </a>
     </div>
-    <a asp-action="Create" class="btn btn-primary btn-lg">
-        <i class="fas fa-plus me-2"></i> Adaugă medicament
-    </a>
 </div>
 
-<!-- Search and View Toggle -->
-<div class="card mb-4">
+<!-- Search and Filter Card -->
+<div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <div class="input-group input-group-lg">
-                    <span class="input-group-text">
-                        <i class="fas fa-search"></i>
-                    </span>
-                    <input type="text" id="searchInput" class="form-control" 
-                           placeholder="Caută medicament..." 
+        <div class="row align-items-center g-3">
+            <div class="col-md-4">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" class="form-control form-control-lg ps-5"
+                           placeholder="Caută medicament..."
                            autocomplete="off">
                 </div>
             </div>
-            <div class="col-md-3 mt-2 mt-md-0">
+            <div class="col-md-3">
                 <select id="sortSelect" class="form-select form-select-lg">
-                    <option value="alphabetical">Alfabetic (A-Z)</option>
-                    <option value="alphabetical-desc">Alfabetic (Z-A)</option>
-                    <option value="most-patients">Cei mai mulți pacienți</option>
-                    <option value="most-prescriptions">Cele mai multe rețete</option>
-                    <option value="recent">Adăugate recent</option>
+                    <option value="alphabetical">📝 Alfabetic (A-Z)</option>
+                    <option value="alphabetical-desc">📝 Alfabetic (Z-A)</option>
+                    <option value="most-patients">👥 Cei mai mulți pacienți</option>
+                    <option value="most-prescriptions">📋 Cele mai multe rețete</option>
+                    <option value="recent">🆕 Adăugate recent</option>
                 </select>
             </div>
-            <div class="col-md-3 mt-2 mt-md-0">
+            <div class="col-md-3">
+                <select id="filterStatus" class="form-select form-select-lg">
+                    <option value="">🎯 Toate statusurile</option>
+                    <option value="active">✅ Active (cu rețete)</option>
+                    <option value="ready">⏳ Pregătite (cu pacienți)</option>
+                    <option value="inactive">⚠️ Inactive (fără pacienți)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
                 <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="viewMode" id="gridView" value="grid" checked>
-                    <label class="btn btn-outline-secondary" for="gridView">
-                        <i class="fas fa-th-large"></i> Grid
+                    <input type="radio" class="btn-check" name="viewMode" id="cardView" value="card" checked>
+                    <label class="btn btn-outline-primary" for="cardView">
+                        <i class="fas fa-th-large"></i> Carduri
                     </label>
-                    
-                    <input type="radio" class="btn-check" name="viewMode" id="listView" value="list">
-                    <label class="btn btn-outline-secondary" for="listView">
-                        <i class="fas fa-list"></i> Listă
+
+                    <input type="radio" class="btn-check" name="viewMode" id="tableView" value="table">
+                    <label class="btn btn-outline-primary" for="tableView">
+                        <i class="fas fa-list"></i> Tabel
                     </label>
                 </div>
             </div>
+        </div>
+
+        <!-- Quick Stats Pills -->
+        <div class="mt-3 d-flex flex-wrap gap-2">
+            <span class="badge rounded-pill bg-gradient-primary px-3 py-2">
+                <i class="fas fa-check-circle me-1"></i>
+                @Model.Count(m => m.Retete?.Any() == true) cu rețete active
+            </span>
+            <span class="badge rounded-pill bg-gradient-info px-3 py-2">
+                <i class="fas fa-users me-1"></i>
+                @Model.Count(m => m.PacientMedicamente?.Any() == true) cu pacienți
+            </span>
+            <span class="badge rounded-pill bg-gradient-warning px-3 py-2">
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                @Model.Count(m => !m.PacientMedicamente?.Any() == true) fără pacienți
+            </span>
         </div>
     </div>
 </div>
 
-<!-- Grid View -->
-<div id="gridViewContainer" class="row g-3">
-    @foreach (var med in Model)
-    {
-       
+<!-- Card View -->
+<div id="cardViewContainer">
+    <div class="row g-4">
+        @foreach (var med in Model)
+        {
             var numarPacienti = med.PacientMedicamente?.Count ?? 0;
             var numarRetete = med.Retete?.Count ?? 0;
-        
-        
-        <div class="col-xl-3 col-lg-4 col-md-6 medicament-card" 
-             data-id="@med.Id"
-             data-nume="@med.Nume.ToLower()"
-             data-pacienti="@numarPacienti"
-             data-retete="@numarRetete">
-            
-            <div class="card medicament-grid-card h-100">
-                <!-- Card Header with Actions -->
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div class="medicament-icon">
-                        <span class="icon-circle">
-                            @med.Nume.Substring(0, Math.Min(2, med.Nume.Length)).ToUpper()
-                        </span>
+            var statusClass = numarRetete > 0 ? "status-active" : numarPacienti > 0 ? "status-ready" : "status-inactive";
+            var statusText = numarRetete > 0 ? "Activ" : numarPacienti > 0 ? "Pregătit" : "Inactiv";
+            var statusIcon = numarRetete > 0 ? "check-circle" : numarPacienti > 0 ? "clock" : "exclamation-triangle";
+
+            <div class="col-xl-3 col-lg-4 col-md-6 medicament-card"
+                 data-id="@med.Id"
+                 data-nume="@med.Nume.ToLower()"
+                 data-pacienti="@numarPacienti"
+                 data-retete="@numarRetete"
+                 data-status="@(numarRetete > 0 ? "active" : numarPacienti > 0 ? "ready" : "inactive")">
+
+                <div class="card medicine-card h-100 @statusClass">
+                    <!-- Status Badge -->
+                    <div class="status-badge">
+                        <i class="fas fa-@statusIcon"></i>
+                        <span>@statusText</span>
                     </div>
-                    <div class="dropdown">
-                        <button class="btn btn-link btn-sm text-muted" data-bs-toggle="dropdown">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <a class="dropdown-item" asp-action="Details" asp-route-id="@med.Id">
-                                    <i class="fas fa-eye me-2"></i>Vezi detalii
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" asp-action="Edit" asp-route-id="@med.Id">
-                                    <i class="fas fa-edit me-2"></i>Editează
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" asp-action="ManagePatients" asp-route-id="@med.Id">
-                                    <i class="fas fa-users me-2"></i>Gestionează pacienții
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <button class="dropdown-item text-danger" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#deleteModal_@med.Id">
-                                    <i class="fas fa-trash me-2"></i>Șterge
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Card Body -->
-                <div class="card-body text-center">
-                    <h5 class="card-title mb-3">@med.Nume</h5>
-                    
-                    <div class="row text-center mb-3">
-                        <div class="col-6">
-                            <div class="stat-box">
-                                <div class="stat-number text-primary">@numarPacienti</div>
-                                <div class="stat-label">Pacienți</div>
+
+                    <!-- Card Body -->
+                    <div class="card-body">
+                        <!-- Medicine Icon and Name -->
+                        <div class="text-center mb-4">
+                            <div class="medicine-icon mb-3">
+                                <i class="fas fa-pills"></i>
                             </div>
+                            <h5 class="card-title mb-1">@med.Nume</h5>
+                            <small class="text-muted">ID: #@med.Id</small>
                         </div>
-                        <div class="col-6">
-                            <div class="stat-box">
-                                <div class="stat-number text-success">@numarRetete</div>
-                                <div class="stat-label">Rețete</div>
+
+                        <!-- Statistics -->
+                        <div class="stats-container">
+                            <div class="stat-item">
+                                <div class="stat-icon patients">
+                                    <i class="fas fa-user-friends"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-value">@numarPacienti</div>
+                                    <div class="stat-desc">Pacienți</div>
+                                </div>
+                            </div>
+
+                            <div class="stat-item">
+                                <div class="stat-icon prescriptions">
+                                    <i class="fas fa-file-medical"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-value">@numarRetete</div>
+                                    <div class="stat-desc">Rețete</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Card Footer -->
-                <div class="card-footer bg-transparent">
-                    <div class="d-grid gap-2">
-                        <a asp-action="Details" asp-route-id="@med.Id" 
-                           class="btn btn-primary btn-sm">
-                            <i class="fas fa-eye me-1"></i> Vezi detalii
-                        </a>
-                        @if (numarPacienti > 0)
-                        {
-                            <a asp-controller="Reteta" asp-action="Create" asp-route-medId="@med.Id"
-                               class="btn btn-success btn-sm">
-                                <i class="fas fa-file-medical me-1"></i> Rețetă nouă
+
+                    <!-- Card Footer with Actions -->
+                    <div class="card-footer bg-transparent">
+                        <div class="d-grid gap-2">
+                            <a asp-action="Details" asp-route-id="@med.Id"
+                               class="btn btn-primary">
+                                <i class="fas fa-eye me-1"></i> Vezi detalii
                             </a>
-                        }
-                        else
-                        {
-                            <a asp-action="ManagePatients" asp-route-id="@med.Id"
-                               class="btn btn-outline-warning btn-sm">
-                                <i class="fas fa-user-plus me-1"></i> Adaugă pacienți
-                            </a>
-                        }
+
+                            <div class="btn-group" role="group">
+                                <a asp-action="Edit" asp-route-id="@med.Id"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-edit"></i> Editează
+                                </a>
+                                <a asp-action="ManagePatients" asp-route-id="@med.Id"
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-users"></i> Pacienți
+                                </a>
+                                @if (numarRetete == 0)
+                                {
+                                    <button class="btn btn-outline-danger btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteModal_@med.Id">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                }
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Delete Modal -->
-        <div class="modal fade" id="deleteModal_@med.Id" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title text-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Confirmare ștergere
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Vrei să ștergi definitiv medicamentul <strong>@med.Nume</strong>?</p>
-                        
-                        @if (numarRetete > 0)
-                        {
-                            <div class="alert alert-danger">
-                                <i class="fas fa-times-circle me-2"></i>
-                                <strong>Nu se poate șterge!</strong><br>
-                                Medicamentul are @numarRetete rețete asociate.
-                            </div>
-                        }
-                        else if (numarPacienti > 0)
-                        {
-                            <div class="alert alert-warning">
-                                <strong>Atenție!</strong> Această acțiune va elimina și:
-                                <ul class="mb-0 mt-2">
-                                    <li>@numarPacienti asocieri cu pacienții</li>
-                                </ul>
-                            </div>
-                        }
-                        
-                        @if (numarRetete == 0)
-                        {
-                            <p class="text-danger"><strong>Această acțiune nu poate fi anulată!</strong></p>
-                        }
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
-                        @if (numarRetete == 0)
-                        {
+
+            <!-- Delete Modal -->
+            <div class="modal fade" id="deleteModal_@med.Id" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Confirmare ștergere
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Vrei să ștergi medicamentul <strong>@med.Nume</strong>?</p>
+                            @if (numarPacienti > 0)
+                            {
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    Această acțiune va elimina și @numarPacienti asocieri cu pacienții.
+                                </div>
+                            }
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
                             <form asp-action="Delete" method="post" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@med.Id" />
                                 <button type="submit" class="btn btn-danger">
-                                    <i class="fas fa-trash me-1"></i> Șterge definitiv
+                                    <i class="fas fa-trash me-1"></i> Șterge
                                 </button>
                             </form>
-                        }
-                        else
-                        {
-                            <button type="button" class="btn btn-danger" disabled>
-                                <i class="fas fa-lock me-1"></i> Nu se poate șterge
-                            </button>
-                        }
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    }
+        }
+    </div>
 </div>
 
-<!-- List View -->
-<div id="listViewContainer" class="d-none">
-    <div class="card">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th width="40%">Medicament</th>
-                        <th width="15%" class="text-center">Pacienți</th>
-                        <th width="15%" class="text-center">Rețete</th>
-                        <th width="20%">Status</th>
-                        <th width="10%" class="text-center">Acțiuni</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var med in Model)
-                    {
-                        
+<!-- Table View -->
+<div id="tableViewContainer" class="d-none">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <tr>
+                            <th class="text-white border-0">Medicament</th>
+                            <th class="text-white border-0 text-center">Status</th>
+                            <th class="text-white border-0 text-center">Pacienți</th>
+                            <th class="text-white border-0 text-center">Rețete</th>
+                            <th class="text-white border-0 text-center">Acțiuni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var med in Model)
+                        {
                             var numarPacienti = med.PacientMedicamente?.Count ?? 0;
                             var numarRetete = med.Retete?.Count ?? 0;
-                     
-                        
-                        <tr class="medicament-list-row" 
-                            data-id="@med.Id"
-                            data-nume="@med.Nume.ToLower()"
-                            data-pacienti="@numarPacienti"
-                            data-retete="@numarRetete">
-                            
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="medicament-icon-small me-3">
-                                        <span class="icon-circle-small">
-                                            @med.Nume.Substring(0, Math.Min(2, med.Nume.Length)).ToUpper()
+
+                            <tr class="medicament-row"
+                                data-id="@med.Id"
+                                data-nume="@med.Nume.ToLower()"
+                                data-pacienti="@numarPacienti"
+                                data-retete="@numarRetete"
+                                data-status="@(numarRetete > 0 ? "active" : numarPacienti > 0 ? "ready" : "inactive")">
+
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="medicine-icon-small me-3">
+                                            <i class="fas fa-pills"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">@med.Nume</h6>
+                                            <small class="text-muted">ID: #@med.Id</small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="text-center">
+                                    @if (numarRetete > 0)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Activ
                                         </span>
+                                    }
+                                    else if (numarPacienti > 0)
+                                    {
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-clock me-1"></i>Pregătit
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Inactiv
+                                        </span>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="badge bg-primary rounded-pill px-3">@numarPacienti</span>
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="badge bg-success rounded-pill px-3">@numarRetete</span>
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a asp-action="Details" asp-route-id="@med.Id"
+                                           class="btn btn-outline-primary" title="Detalii">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@med.Id"
+                                           class="btn btn-outline-warning" title="Editează">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a asp-action="ManagePatients" asp-route-id="@med.Id"
+                                           class="btn btn-outline-info" title="Pacienți">
+                                            <i class="fas fa-users"></i>
+                                        </a>
                                     </div>
-                                    <div>
-                                        <h6 class="mb-0">@med.Nume</h6>
-                                        <small class="text-muted">ID: #@med.Id</small>
-                                    </div>
-                                </div>
-                            </td>
-                            
-                            <td class="text-center">
-                                <span class="badge bg-primary rounded-pill">@numarPacienti</span>
-                            </td>
-                            
-                            <td class="text-center">
-                                <span class="badge bg-success rounded-pill">@numarRetete</span>
-                            </td>
-                            
-                            <td>
-                                @if (numarPacienti == 0)
-                                {
-                                    <span class="badge bg-warning">Fără pacienți</span>
-                                }
-                                else if (numarRetete == 0)
-                                {
-                                    <span class="badge bg-info">Pregătit pentru rețete</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-success">Activ</span>
-                                }
-                            </td>
-                            
-                            <td class="text-center">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <a asp-action="Details" asp-route-id="@med.Id" 
-                                       class="btn btn-outline-primary" title="Vezi detalii">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a asp-action="Edit" asp-route-id="@med.Id" 
-                                       class="btn btn-outline-warning" title="Editează">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button class="btn btn-outline-danger" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#deleteModal_@med.Id" 
-                                            title="Șterge"
-                                            @(numarRetete > 0 ? "disabled" : "")>
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- No Results -->
 <div id="noResults" class="text-center py-5 d-none">
-    <i class="fas fa-search fa-3x text-muted mb-3"></i>
-    <h4 class="text-muted">Nu au fost găsite medicamente</h4>
-    <p class="text-muted">Încearcă să modifici termenul de căutare</p>
+    <div class="empty-state">
+        <i class="fas fa-search fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">Nu au fost găsite medicamente</h4>
+        <p class="text-muted">Încearcă să modifici criteriile de căutare</p>
+    </div>
 </div>
 
 @section Scripts {
@@ -324,44 +332,57 @@
         document.addEventListener('DOMContentLoaded', function () {
             const searchInput = document.getElementById('searchInput');
             const sortSelect = document.getElementById('sortSelect');
-            const gridViewBtn = document.getElementById('gridView');
-            const listViewBtn = document.getElementById('listView');
-            const gridContainer = document.getElementById('gridViewContainer');
-            const listContainer = document.getElementById('listViewContainer');
+            const filterStatus = document.getElementById('filterStatus');
+            const cardViewBtn = document.getElementById('cardView');
+            const tableViewBtn = document.getElementById('tableView');
+            const cardContainer = document.getElementById('cardViewContainer');
+            const tableContainer = document.getElementById('tableViewContainer');
             const noResults = document.getElementById('noResults');
-            
-            const gridCards = document.querySelectorAll('.medicament-card');
-            const listRows = document.querySelectorAll('.medicament-list-row');
+
+            const cards = document.querySelectorAll('.medicament-card');
+            const rows = document.querySelectorAll('.medicament-row');
 
             // View mode toggle
             function toggleView() {
-                if (gridViewBtn.checked) {
-                    gridContainer.classList.remove('d-none');
-                    listContainer.classList.add('d-none');
+                if (cardViewBtn.checked) {
+                    cardContainer.classList.remove('d-none');
+                    tableContainer.classList.add('d-none');
                 } else {
-                    gridContainer.classList.add('d-none');
-                    listContainer.classList.remove('d-none');
+                    cardContainer.classList.add('d-none');
+                    tableContainer.classList.remove('d-none');
                 }
+                filterAndSort();
             }
 
-            gridViewBtn.addEventListener('change', toggleView);
-            listViewBtn.addEventListener('change', toggleView);
+            cardViewBtn.addEventListener('change', toggleView);
+            tableViewBtn.addEventListener('change', toggleView);
 
-            // Search and sort functionality
+            // Filter and sort functionality
             function filterAndSort() {
                 const searchTerm = searchInput.value.toLowerCase();
                 const sortValue = sortSelect.value;
-                
-                const isGridView = gridViewBtn.checked;
-                const elements = isGridView ? gridCards : listRows;
-                
+                const statusFilter = filterStatus.value;
+                const isCardView = cardViewBtn.checked;
+                const elements = isCardView ? cards : rows;
+
                 let visibleElements = [];
 
                 // Filter
                 elements.forEach(element => {
                     const name = element.dataset.nume;
-                    const isVisible = name.includes(searchTerm);
-                    
+                    const status = element.dataset.status;
+                    let isVisible = true;
+
+                    // Search filter
+                    if (searchTerm && !name.includes(searchTerm)) {
+                        isVisible = false;
+                    }
+
+                    // Status filter
+                    if (statusFilter && status !== statusFilter) {
+                        isVisible = false;
+                    }
+
                     if (isVisible) {
                         element.style.display = '';
                         visibleElements.push(element);
@@ -385,9 +406,9 @@
                         case 'alphabetical-desc':
                             return nameB.localeCompare(nameA);
                         case 'most-patients':
-                            return patientsB - patientsA;
+                            return patientsB - patientsA || nameA.localeCompare(nameB);
                         case 'most-prescriptions':
-                            return prescriptionsB - prescriptionsA;
+                            return prescriptionsB - prescriptionsA || nameA.localeCompare(nameB);
                         case 'recent':
                             return idB - idA;
                         default: // alphabetical
@@ -396,25 +417,37 @@
                 });
 
                 // Reorder elements
-                const container = isGridView ? gridContainer : listContainer.querySelector('tbody');
+                const container = isCardView ?
+                    cardContainer.querySelector('.row') :
+                    tableContainer.querySelector('tbody');
+
                 visibleElements.forEach(element => {
-                    container.appendChild(element);
+                    if (isCardView) {
+                        element.parentElement.appendChild(element);
+                    } else {
+                        container.appendChild(element);
+                    }
                 });
 
                 // Show/hide no results
                 if (visibleElements.length === 0) {
                     noResults.classList.remove('d-none');
-                    gridContainer.classList.add('d-none');
-                    listContainer.classList.add('d-none');
+                    cardContainer.classList.add('d-none');
+                    tableContainer.classList.add('d-none');
                 } else {
                     noResults.classList.add('d-none');
-                    toggleView();
+                    if (isCardView) {
+                        cardContainer.classList.remove('d-none');
+                    } else {
+                        tableContainer.classList.remove('d-none');
+                    }
                 }
             }
 
             // Event listeners
             searchInput.addEventListener('input', filterAndSort);
             sortSelect.addEventListener('change', filterAndSort);
+            filterStatus.addEventListener('change', filterAndSort);
 
             // Initial load
             filterAndSort();
@@ -423,120 +456,267 @@
 }
 
 <style>
-    .medicament-grid-card {
-        border: none;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
+    /* Page header gradient */
+    .page-header-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
         border-radius: 12px;
+        color: white;
     }
-    
-    .medicament-grid-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+
+    /* Mini stat cards in header */
+    .stat-card-mini {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-align: center;
     }
-    
-    .icon-circle {
-        width: 50px;
-        height: 50px;
+
+        .stat-card-mini .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .stat-card-mini .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            opacity: 0.9;
+            color: white;
+        }
+
+    /* Search box styling */
+    .search-box {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 1;
+    }
+
+    /* Medicine card styling */
+    .medicine-card {
+        border: none;
+        border-radius: 16px;
+        overflow: visible;
+        position: relative;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+        .medicine-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+        }
+
+    /* Status badge on card */
+    .status-badge {
+        position: absolute;
+        top: -10px;
+        right: 20px;
+        background: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .status-active .status-badge {
+        color: #198754;
+        border: 2px solid #d1f2eb;
+    }
+
+    .status-ready .status-badge {
+        color: #0dcaf0;
+        border: 2px solid #cff4fc;
+    }
+
+    .status-inactive .status-badge {
+        color: #ffc107;
+        border: 2px solid #fff3cd;
+    }
+
+    /* Medicine icon */
+    .medicine-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
         border-radius: 50%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-weight: bold;
-        font-size: 1.1rem;
+        font-size: 2rem;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
     }
-    
-    .icon-circle-small {
+
+    .medicine-icon-small {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    /* Statistics container in card */
+    .stats-container {
+        display: flex;
+        justify-content: space-around;
+        margin: 1.5rem 0;
+        padding: 1rem 0;
+        border-top: 1px solid #f1f3f5;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .stat-icon {
         width: 40px;
         height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 0.9rem;
+        font-size: 1.1rem;
     }
-    
-    .stat-box {
-        padding: 1rem 0;
+
+        .stat-icon.patients {
+            background: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+
+        .stat-icon.prescriptions {
+            background: rgba(25, 135, 84, 0.1);
+            color: #198754;
+        }
+
+    .stat-info {
+        text-align: left;
     }
-    
-    .stat-number {
+
+    .stat-value {
         font-size: 1.5rem;
-        font-weight: bold;
-        margin-bottom: 0.25rem;
+        font-weight: 700;
+        color: #212529;
+        line-height: 1;
     }
-    
-    .stat-label {
-        font-size: 0.85rem;
+
+    .stat-desc {
+        font-size: 0.75rem;
         color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    /* Card footer */
+    .medicine-card .card-footer {
+        background: #f8f9fa;
+        border-top: none;
+        padding: 1rem;
+    }
+
+    /* Gradient badges */
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+    }
+
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    }
+
+    /* Button improvements */
+    .btn {
+        border-radius: 8px;
         font-weight: 500;
+        transition: all 0.2s ease;
     }
-    
-    .medicament-grid-card .card-header {
-        background: transparent;
-        border-bottom: 1px solid #f8f9fa;
-        padding: 1rem 1.25rem 0.5rem;
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+    .btn-check:checked + .btn-outline-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: transparent;
     }
-    
-    .medicament-grid-card .card-footer {
-        border-top: 1px solid #f8f9fa;
-        padding: 1rem 1.25rem;
-    }
-    
-    .btn-check:checked + .btn-outline-secondary {
-        background-color: #6c757d;
-        border-color: #6c757d;
-        color: white;
-    }
-    
-    .table th {
+
+    /* Table styling */
+    .table thead th {
         font-weight: 600;
-        color: #495057;
-        border-bottom: 2px solid #dee2e6;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        padding: 1rem;
     }
-    
-    .medicament-list-row:hover {
-        background-color: rgba(0,123,255,.075);
+
+    .medicament-row:hover {
+        background-color: rgba(102, 126, 234, 0.05);
     }
-    
-    .badge {
-        font-size: 0.75em;
-    }
-    
-    .btn-group-sm .btn {
-        border-radius: 0.25rem !important;
-        margin-right: 2px;
-    }
-    
-    .input-group-lg .form-control, 
-    .input-group-lg .input-group-text {
-        border-radius: 0.5rem;
-    }
-    
-    .form-select-lg {
-        border-radius: 0.5rem;
-    }
-    
-    .card {
-        border: none;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+
+    /* Empty state */
+    .empty-state {
+        padding: 3rem;
+        background: #f8f9fa;
         border-radius: 12px;
     }
-    
-    .card-body {
-        padding: 1.5rem;
+
+    /* Form controls */
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
     }
-    
-    
-    
-    .medicament-card, .medicament-list-row {
-        animation: fadeInUp 0.3s ease-out;
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+    .form-control-lg, .form-select-lg {
+        padding: 0.75rem 1rem;
     }
-    
-   
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .medicine-card .stats-container {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            justify-content: center;
+        }
+
+        .page-header-gradient {
+            padding: 1rem;
+        }
+
+        .stat-card-mini {
+            padding: 0.5rem 1rem;
+        }
+    }
 </style>
