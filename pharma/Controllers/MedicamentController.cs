@@ -146,31 +146,7 @@ namespace pharma.Controllers
             return RedirectToAction("Index");
         }
 
-        [HttpGet]
-        public IActionResult ManagePatients(int id)
-        {
-            var medicament = _pharmaContext.Medicamente
-                .Include(m => m.PacientMedicamente)
-                .ThenInclude(pm => pm.Pacient)
-                .FirstOrDefault(m => m.Id == id);
-
-            if (medicament == null)
-                return NotFound();
-
-            var viewModel = new MedicamentPatientsViewModel
-            {
-                MedicamentId = medicament.Id,
-                MedicamentNume = medicament.Nume,
-                AssociatedPatients = medicament.PacientMedicamente.Select(pm => pm.Pacient).ToList(),
-                AvailablePatients = _pharmaContext.Pacienti
-                    .Where(p => !p.PacientMedicamente.Any(pm => pm.MedicamentId == id))
-                    .OrderBy(p => p.Nume)
-                    .ThenBy(p => p.Prenume)
-                    .ToList()
-            };
-
-            return View(viewModel);
-        }
+       
 
         [HttpPost]
         public IActionResult AddPatientAssociation(int medicamentId, int pacientId)

@@ -4,6 +4,21 @@
     ViewData["Title"] = ViewBag.MedicamentNume != null ? $"Rețete - {ViewBag.MedicamentNume}" : "Toate rețetele";
     var medicamentId = ViewContext.HttpContext.Request.Query["medId"].FirstOrDefault();
     var today = DateTime.Today;
+
+    // Pagination parameters from ViewBag
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var totalItems = ViewBag.TotalItems ?? Model.Count();
+    var pageSize = ViewBag.PageSize ?? 50;
+
+    // Filter parameters from ViewBag
+    var currentSearch = ViewBag.Search ?? "";
+    var currentDateFrom = ViewBag.DateFrom ?? "";
+    var currentDateTo = ViewBag.DateTo ?? "";
+    var currentVisitFilter = ViewBag.VisitFilter ?? "";
+    var currentSortBy = ViewBag.SortBy ?? "data-desc";
+
+    var pagedItems = Model; // Items are already paged from controller
 }
 
 <!-- Header cu gradient și statistici -->
@@ -23,12 +38,16 @@
             </h2>
             <div class="d-flex gap-3">
                 <div class="stat-card-mini">
-                    <div class="stat-number">@Model.Count()</div>
+                    <div class="stat-number">@totalItems</div>
                     <div class="stat-label">Total rețete</div>
                 </div>
                 <div class="stat-card-mini">
                     <div class="stat-number">@Model.Count(r => r.DataUrmatoareiVizite?.Month == DateTime.Now.Month)</div>
                     <div class="stat-label">Luna aceasta</div>
+                </div>
+                <div class="stat-card-mini">
+                    <div class="stat-number">@currentPage</div>
+                    <div class="stat-label">Pagina @currentPage din @totalPages</div>
                 </div>
             </div>
         </div>
@@ -38,84 +57,94 @@
 <!-- Enhanced Filters Card -->
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
-        <div class="row g-3">
-            <!-- Text Search -->
-            <div class="col-lg-3">
-                <div class="search-box">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="searchGeneral" class="form-control form-control-lg ps-5" 
-                           placeholder="Caută pacient, serie, număr..."
-                           autocomplete="off">
+        <form method="get" asp-action="Index" id="filterForm">
+            <input type="hidden" name="medId" value="@medicamentId" />
+            <input type="hidden" name="page" value="1" />
+            
+            <div class="row g-3">
+                <!-- Text Search -->
+                <div class="col-lg-3">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" name="search" value="@currentSearch" 
+                               class="form-control form-control-lg ps-5"
+                               placeholder="Caută pacient, serie, număr..."
+                               autocomplete="off">
+                    </div>
+                </div>
+
+                <!-- Date Range -->
+                <div class="col-lg-2">
+                    <input type="date" name="dateFrom" value="@currentDateFrom" 
+                           class="form-control form-control-lg" title="De la data">
+                </div>
+                <div class="col-lg-2">
+                    <input type="date" name="dateTo" value="@currentDateTo" 
+                           class="form-control form-control-lg" title="Până la data">
+                </div>
+
+                <!-- Next Visit Filter -->
+                <div class="col-lg-2">
+                    <select name="visitFilter" class="form-select form-select-lg">
+                        <option value="" selected="@(string.IsNullOrEmpty(currentVisitFilter))">Toate vizitele</option>
+                        <option value="cu-vizite" selected="@(currentVisitFilter == "cu-vizite")">Cu vizite programate</option>
+                        <option value="fara-vizite" selected="@(currentVisitFilter == "fara-vizite")">Fără vizite</option>
+                        <option value="saptamana" selected="@(currentVisitFilter == "saptamana")">Săptămâna aceasta</option>
+                        <option value="luna" selected="@(currentVisitFilter == "luna")">Luna aceasta</option>
+                        <option value="luna-viitoare" selected="@(currentVisitFilter == "luna-viitoare")">Luna viitoare</option>
+                    </select>
+                </div>
+
+                <!-- Sort -->
+                <div class="col-lg-2">
+                    <select name="sortBy" class="form-select form-select-lg">
+                        <option value="data-desc" selected="@(currentSortBy == "data-desc")">Data (recent)</option>
+                        <option value="data-asc" selected="@(currentSortBy == "data-asc")">Data (vechi)</option>
+                        <option value="pacient-asc" selected="@(currentSortBy == "pacient-asc")">Pacient (A-Z)</option>
+                        <option value="pacient-desc" selected="@(currentSortBy == "pacient-desc")">Pacient (Z-A)</option>
+                        <option value="vizita-asc" selected="@(currentSortBy == "vizita-asc")">Vizită (apropiată)</option>
+                        <option value="vizita-desc" selected="@(currentSortBy == "vizita-desc")">Vizită (îndepărtată)</option>
+                    </select>
+                </div>
+
+
+                <!-- Filter button -->
+                <div class="col-lg-1">
+                    <button type="submit" class="btn btn-primary btn-lg w-100" title="Filtrează">
+                        <i class="fas fa-search"></i>
+                    </button>
                 </div>
             </div>
-            
-            <!-- Date Range -->
-            <div class="col-lg-2">
-                <input type="date" id="dateFrom" class="form-control form-control-lg" title="De la data">
-            </div>
-            <div class="col-lg-2">
-                <input type="date" id="dateTo" class="form-control form-control-lg" title="Până la data">
-            </div>
-            
-            <!-- Next Visit Filter -->
-            <div class="col-lg-2">
-                <select id="filterVizite" class="form-select form-select-lg">
-                    <option value="">Toate vizitele</option>
-                    <option value="cu-vizite">Cu vizite programate</option>
-                    <option value="fara-vizite">Fără vizite</option>
-                    <option value="saptamana">Săptămâna aceasta</option>
-                    <option value="luna">Luna aceasta</option>
-                    <option value="luna-viitoare">Luna viitoare</option>
-                </select>
-            </div>
-            
-            <!-- Sort -->
-            <div class="col-lg-2">
-                <select id="sortBy" class="form-select form-select-lg">
-                    <option value="data-desc">Data (recent)</option>
-                    <option value="data-asc">Data (vechi)</option>
-                    <option value="pacient-asc">Pacient (A-Z)</option>
-                    <option value="pacient-desc">Pacient (Z-A)</option>
-                    <option value="vizita-asc">Vizită (apropiată)</option>
-                    <option value="vizita-desc">Vizită (îndepărtată)</option>
-                </select>
-            </div>
-            
-            <!-- Clear button -->
-            <div class="col-lg-1">
-                <button type="button" id="clearFilters" class="btn btn-outline-secondary btn-lg w-100" title="Șterge filtrele">
-                    <i class="fas fa-eraser"></i>
+
+            <!-- Quick Filter Pills -->
+            <div class="mt-3 d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-sm btn-outline-primary quick-filter" data-filter="today">
+                    <i class="fas fa-calendar-day me-1"></i>Astăzi
                 </button>
+                <button type="button" class="btn btn-sm btn-outline-info quick-filter" data-filter="this-week">
+                    <i class="fas fa-calendar-week me-1"></i>Săptămâna aceasta
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success quick-filter" data-filter="this-month">
+                    <i class="fas fa-calendar-alt me-1"></i>Luna aceasta
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-warning quick-filter" data-filter="next-month">
+                    <i class="fas fa-calendar-plus me-1"></i>Luna viitoare
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary quick-filter" data-filter="no-visits">
+                    <i class="fas fa-calendar-times me-1"></i>Fără vizite
+                </button>
+                <a href="@Url.Action("Index", new { medId = medicamentId })" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-eraser me-1"></i>Șterge filtrele
+                </a>
             </div>
-        </div>
-
-     
-
-        <!-- Quick Filter Pills -->
-        <div class="mt-3 d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-sm btn-outline-primary quick-filter" data-filter="today">
-                <i class="fas fa-calendar-day me-1"></i>Astăzi
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-info quick-filter" data-filter="this-week">
-                <i class="fas fa-calendar-week me-1"></i>Săptămâna aceasta
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-success quick-filter" data-filter="this-month">
-                <i class="fas fa-calendar-alt me-1"></i>Luna aceasta
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-warning quick-filter" data-filter="next-month">
-                <i class="fas fa-calendar-plus me-1"></i>Luna viitoare
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary quick-filter" data-filter="no-visits">
-                <i class="fas fa-calendar-times me-1"></i>Fără vizite
-            </button>
-        </div>
+        </form>
     </div>
 </div>
 
 <!-- Results Table -->
-@if (Model.Any())
+@if (totalItems > 0)
 {
-    <div class="card border-0 shadow-sm">
+    <div class="card border-0 shadow-sm" id="tableContainer">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0" id="reteteTabel">
@@ -142,10 +171,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var reteta in Model.OrderByDescending(r => r.Data))
+                        @foreach (var reteta in pagedItems)
                         {
-                            var daysUntilVisit = reteta.DataUrmatoareiVizite.HasValue ? 
-                                (reteta.DataUrmatoareiVizite.Value - today).Days : (int?)null;
+                            var daysUntilVisit = reteta.DataUrmatoareiVizite.HasValue ?
+                            (reteta.DataUrmatoareiVizite.Value - today).Days : (int?)null;
                             var rowClass = "";
                             if (daysUntilVisit.HasValue)
                             {
@@ -154,15 +183,7 @@
                                 else if (daysUntilVisit <= 7) rowClass = "table-row-soon";
                             }
 
-                            <tr class="reteta-row @rowClass"
-                                data-pacient="@(reteta.pacient?.Nume?.ToLower() ?? "") @(reteta.pacient?.Prenume?.ToLower() ?? "")"
-                                data-medicament="@(reteta.medicament?.Nume?.ToLower() ?? "")"
-                                data-serie="@(reteta.Serie?.ToLower() ?? "")"
-                                data-nr="@(reteta.NrReteta?.ToLower() ?? "")"
-                                data-data="@reteta.Data.ToString("yyyy-MM-dd")"
-                                data-vizita="@(reteta.DataUrmatoareiVizite?.ToString("yyyy-MM-dd") ?? "")"
-                                data-has-vizita="@(reteta.DataUrmatoareiVizite.HasValue ? "true" : "false")">
-                                
+                            <tr class="reteta-row @rowClass">
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="date-badge me-2">
@@ -172,13 +193,17 @@
                                         <small class="text-muted">@reteta.Data.Year</small>
                                     </div>
                                 </td>
-                                
+
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="avatar-circle me-2">
-                                            @if (reteta.pacient != null)
+                                            @if (reteta.pacient != null && !string.IsNullOrEmpty(reteta.pacient.Nume) && !string.IsNullOrEmpty(reteta.pacient.Prenume))
                                             {
                                                 <span>@reteta.pacient.Nume.Substring(0, 1)@reteta.pacient.Prenume.Substring(0, 1)</span>
+                                            }
+                                            else
+                                            {
+                                                <span>?</span>
                                             }
                                         </div>
                                         <div>
@@ -191,7 +216,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                
+
                                 @if (ViewBag.MedicamentNume == null)
                                 {
                                     <td>
@@ -200,7 +225,7 @@
                                         </span>
                                     </td>
                                 }
-                                
+
                                 <td>
                                     @if (!string.IsNullOrEmpty(reteta.Serie))
                                     {
@@ -211,7 +236,7 @@
                                         <span class="text-muted">-</span>
                                     }
                                 </td>
-                                
+
                                 <td>
                                     @if (!string.IsNullOrEmpty(reteta.NrReteta))
                                     {
@@ -222,7 +247,7 @@
                                         <span class="text-muted">-</span>
                                     }
                                 </td>
-                                
+
                                 <td>
                                     @if (reteta.DataUrmatoareiVizite.HasValue)
                                     {
@@ -253,16 +278,19 @@
                                         </span>
                                     }
                                 </td>
-                                
+
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a asp-action="Edit" asp-route-id="@reteta.Id"
                                            class="btn btn-outline-warning" title="Editează">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <button type="button" class="btn btn-outline-danger"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#deleteModal_@reteta.Id"
+                                        <button type="button" class="btn btn-outline-danger delete-btn"
+                                                data-reteta-id="@reteta.Id"
+                                                data-pacient="@reteta.pacient?.Nume @reteta.pacient?.Prenume"
+                                                data-medicament="@reteta.medicament?.Nume"
+                                                data-data="@reteta.Data.ToString("dd.MM.yyyy")"
+                                                data-med-id="@medicamentId"
                                                 title="Șterge">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -274,6 +302,117 @@
                 </table>
             </div>
         </div>
+
+        <!-- Pagination - Întotdeauna afișată dacă sunt mai mult de 1 pagini -->
+        @if (totalPages > 1)
+        {
+            <div class="card-footer bg-light">
+                <nav aria-label="Paginare">
+                    <ul class="pagination justify-content-center mb-0">
+                        @if (currentPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { 
+                                    page = currentPage - 1, 
+                                    medId = medicamentId,
+                                    search = currentSearch,
+                                    dateFrom = currentDateFrom,
+                                    dateTo = currentDateTo,
+                                    visitFilter = currentVisitFilter,
+                                    sortBy = currentSortBy
+                                })">
+                                    <i class="fas fa-angle-left me-1"></i> Previous
+                                </a>
+                            </li>
+                        }
+
+                        @{
+                            var startPage = Math.Max(1, currentPage - 2);
+                            var endPage = Math.Min(totalPages, currentPage + 2);
+                        }
+
+                        @if (startPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { 
+                                    page = 1, 
+                                    medId = medicamentId,
+                                    search = currentSearch,
+                                    dateFrom = currentDateFrom,
+                                    dateTo = currentDateTo,
+                                    visitFilter = currentVisitFilter,
+                                    sortBy = currentSortBy
+                                })">1</a>
+                            </li>
+                            @if (startPage > 2)
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            }
+                        }
+
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", new { 
+                                    page = i, 
+                                    medId = medicamentId,
+                                    search = currentSearch,
+                                    dateFrom = currentDateFrom,
+                                    dateTo = currentDateTo,
+                                    visitFilter = currentVisitFilter,
+                                    sortBy = currentSortBy
+                                })">@i</a>
+                            </li>
+                        }
+
+                        @if (endPage < totalPages)
+                        {
+                            @if (endPage < totalPages - 1)
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            }
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { 
+                                    page = totalPages, 
+                                    medId = medicamentId,
+                                    search = currentSearch,
+                                    dateFrom = currentDateFrom,
+                                    dateTo = currentDateTo,
+                                    visitFilter = currentVisitFilter,
+                                    sortBy = currentSortBy
+                                })">@totalPages</a>
+                            </li>
+                        }
+
+                        @if (currentPage < totalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { 
+                                    page = currentPage + 1, 
+                                    medId = medicamentId,
+                                    search = currentSearch,
+                                    dateFrom = currentDateFrom,
+                                    dateTo = currentDateTo,
+                                    visitFilter = currentVisitFilter,
+                                    sortBy = currentSortBy
+                                })">
+                                    Next <i class="fas fa-angle-right ms-1"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+
+                <!-- Pagination info -->
+                <div class="text-center mt-2 text-muted small">
+                    Afișând @((currentPage - 1) * pageSize + 1) - @(Math.Min(currentPage * pageSize, totalItems)) din @totalItems rețete
+                </div>
+            </div>
+        }
     </div>
 }
 else
@@ -292,254 +431,127 @@ else
     </div>
 }
 
-<!-- No Results Message -->
-<div id="noResultsMessage" class="text-center py-5 d-none">
-    <div class="empty-state">
-        <i class="fas fa-search fa-4x text-muted mb-3"></i>
-        <h4 class="text-muted">Nu au fost găsite rețete</h4>
-        <p class="text-muted">Încearcă să modifici criteriile de filtrare</p>
-    </div>
-</div>
-
-<!-- Delete Modals -->
-@foreach (var reteta in Model)
-{
-    <div class="modal fade" id="deleteModal_@reteta.Id" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Confirmare ștergere
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Vrei să ștergi definitiv această rețetă?</p>
-                    <ul class="list-unstyled">
-                        <li><strong>Data:</strong> @reteta.Data.ToString("dd.MM.yyyy")</li>
-                        <li><strong>Pacient:</strong> @reteta.pacient?.Nume @reteta.pacient?.Prenume</li>
-                        <li><strong>Medicament:</strong> @reteta.medicament?.Nume</li>
-                    </ul>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
-                    <form asp-action="Delete" asp-controller="Reteta" method="post" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@reteta.Id" />
-                        <input type="hidden" name="returnMedId" value="@medicamentId" />
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash me-1"></i> Șterge
-                        </button>
-                    </form>
-                </div>
+<!-- Universal Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmare ștergere
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Vrei să ștergi definitiv această rețetă?</p>
+                <ul class="list-unstyled" id="deleteDetails">
+                    <!-- Details will be populated by JavaScript -->
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                <form asp-action="Delete" asp-controller="Reteta" method="post" class="d-inline" id="deleteForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteId" />
+                    <input type="hidden" name="returnMedId" id="deleteMedId" />
+                    <button type="submit" class="btn btn-danger" id="confirmDelete">
+                        <i class="fas fa-trash me-1"></i> Șterge
+                    </button>
+                </form>
             </div>
         </div>
     </div>
-}
+</div>
 
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const searchGeneral = document.getElementById('searchGeneral');
-            const dateFrom = document.getElementById('dateFrom');
-            const dateTo = document.getElementById('dateTo');
-            const filterVizite = document.getElementById('filterVizite');
-            const sortBy = document.getElementById('sortBy');
-            const clearFilters = document.getElementById('clearFilters');
+            // Delete functionality
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+
+            deleteButtons.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const retetaId = this.dataset.retetaId;
+                    const pacient = this.dataset.pacient;
+                    const medicament = this.dataset.medicament;
+                    const data = this.dataset.data;
+                    const medId = this.dataset.medId;
+
+                    // Populate modal with data
+                    document.getElementById('deleteId').value = retetaId;
+                    document.getElementById('deleteMedId').value = medId || '';
+
+                    const details = document.getElementById('deleteDetails');
+                    details.innerHTML = `
+                        <li><strong>Data:</strong> ${data}</li>
+                        <li><strong>Pacient:</strong> ${pacient}</li>
+                        <li><strong>Medicament:</strong> ${medicament}</li>
+                    `;
+
+                    deleteModal.show();
+                });
+            });
+
+            // Quick filters functionality
             const quickFilters = document.querySelectorAll('.quick-filter');
-            
-            const rows = document.querySelectorAll('.reteta-row');
-            const tableBody = document.querySelector('#reteteTabel tbody');
-            const noResults = document.getElementById('noResultsMessage');
-            const tableContainer = document.querySelector('.table-responsive')?.closest('.card');
-            const statsVisible = document.getElementById('statsVisible');
+            const form = document.getElementById('filterForm');
+            const searchInput = form.querySelector('input[name="search"]');
+            const dateFromInput = form.querySelector('input[name="dateFrom"]');
+            const dateToInput = form.querySelector('input[name="dateTo"]');
+            const visitFilterSelect = form.querySelector('select[name="visitFilter"]');
 
-            function filterAndSort() {
-                const searchTerm = searchGeneral.value.toLowerCase();
-                const dateFromVal = dateFrom.value;
-                const dateToVal = dateTo.value;
-                const viziteFilter = filterVizite.value;
-                const sortValue = sortBy.value;
-                
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const weekEnd = new Date(today);
-                weekEnd.setDate(today.getDate() + 7);
-                const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                const nextMonthStart = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-                const nextMonthEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0);
-
-                let visibleRows = [];
-
-                rows.forEach(row => {
-                    let visible = true;
-
-                    // General search
-                    if (searchTerm) {
-                        const pacient = row.dataset.pacient;
-                        const medicament = row.dataset.medicament;
-                        const serie = row.dataset.serie;
-                        const nr = row.dataset.nr;
-                        
-                        if (!pacient.includes(searchTerm) && 
-                            !medicament.includes(searchTerm) && 
-                            !serie.includes(searchTerm) && 
-                            !nr.includes(searchTerm)) {
-                            visible = false;
-                        }
-                    }
-
-                    // Date range filter
-                    if (visible && dateFromVal) {
-                        if (row.dataset.data < dateFromVal) {
-                            visible = false;
-                        }
-                    }
-                    if (visible && dateToVal) {
-                        if (row.dataset.data > dateToVal) {
-                            visible = false;
-                        }
-                    }
-
-                    // Visit filter
-                    if (visible && viziteFilter) {
-                        const hasVizita = row.dataset.hasVizita === 'true';
-                        const vizitaDate = row.dataset.vizita ? new Date(row.dataset.vizita) : null;
-                        
-                        switch (viziteFilter) {
-                            case 'cu-vizite':
-                                if (!hasVizita) visible = false;
-                                break;
-                            case 'fara-vizite':
-                                if (hasVizita) visible = false;
-                                break;
-                            case 'saptamana':
-                                if (!vizitaDate || vizitaDate < today || vizitaDate > weekEnd) visible = false;
-                                break;
-                            case 'luna':
-                                if (!vizitaDate || vizitaDate < today || vizitaDate > monthEnd) visible = false;
-                                break;
-                            case 'luna-viitoare':
-                                if (!vizitaDate || vizitaDate < nextMonthStart || vizitaDate > nextMonthEnd) visible = false;
-                                break;
-                        }
-                    }
-
-                    if (visible) {
-                        row.classList.remove('d-none');
-                        visibleRows.push(row);
-                    } else {
-                        row.classList.add('d-none');
-                    }
-                });
-
-                // Sort visible rows
-                visibleRows.sort((a, b) => {
-                    switch (sortValue) {
-                        case 'data-asc':
-                            return new Date(a.dataset.data) - new Date(b.dataset.data);
-                        case 'pacient-asc':
-                            return a.dataset.pacient.localeCompare(b.dataset.pacient);
-                        case 'pacient-desc':
-                            return b.dataset.pacient.localeCompare(a.dataset.pacient);
-                        case 'vizita-asc':
-                            // Put rows without visits at the end
-                            const dateA = a.dataset.vizita || '9999-12-31';
-                            const dateB = b.dataset.vizita || '9999-12-31';
-                            return dateA.localeCompare(dateB);
-                        case 'vizita-desc':
-                            // Put rows without visits at the end
-                            const dateC = a.dataset.vizita || '0000-01-01';
-                            const dateD = b.dataset.vizita || '0000-01-01';
-                            return dateD.localeCompare(dateC);
-                        default: // data-desc
-                            return new Date(b.dataset.data) - new Date(a.dataset.data);
-                    }
-                });
-
-                // Reorder rows in table
-                if (tableBody) {
-                    visibleRows.forEach(row => {
-                        tableBody.appendChild(row);
-                    });
-                }
-
-                // Update visible count
-                if (statsVisible) {
-                    const visibleSpan = statsVisible.querySelector('.fa-eye').nextSibling;
-                    if (visibleSpan) {
-                        visibleSpan.textContent = ` ${visibleRows.length} afișate`;
-                    }
-                }
-
-                // Show/hide no results
-                if (visibleRows.length === 0 && rows.length > 0) {
-                    noResults.classList.remove('d-none');
-                    if (tableContainer) tableContainer.classList.add('d-none');
-                } else {
-                    noResults.classList.add('d-none');
-                    if (tableContainer) tableContainer.classList.remove('d-none');
-                }
-            }
-
-            // Quick filters
             quickFilters.forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     // Remove active class from all
                     quickFilters.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
 
                     const filter = this.dataset.filter;
-                    
+
                     // Reset other filters
-                    searchGeneral.value = '';
-                    dateFrom.value = '';
-                    dateTo.value = '';
-                    
+                    searchInput.value = '';
+                    dateFromInput.value = '';
+                    dateToInput.value = '';
+                    visitFilterSelect.value = '';
+
                     switch (filter) {
                         case 'today':
                             const today = new Date().toISOString().split('T')[0];
-                            dateFrom.value = today;
-                            dateTo.value = today;
+                            dateFromInput.value = today;
+                            dateToInput.value = today;
                             break;
                         case 'this-week':
-                            filterVizite.value = 'saptamana';
+                            visitFilterSelect.value = 'saptamana';
                             break;
                         case 'this-month':
-                            filterVizite.value = 'luna';
+                            visitFilterSelect.value = 'luna';
                             break;
                         case 'next-month':
-                            filterVizite.value = 'luna-viitoare';
+                            visitFilterSelect.value = 'luna-viitoare';
                             break;
                         case 'no-visits':
-                            filterVizite.value = 'fara-vizite';
+                            visitFilterSelect.value = 'fara-vizite';
                             break;
                     }
-                    
-                    filterAndSort();
+
+                    // Submit form
+                    form.submit();
                 });
             });
 
-            // Event listeners
-            searchGeneral.addEventListener('input', filterAndSort);
-            dateFrom.addEventListener('change', filterAndSort);
-            dateTo.addEventListener('change', filterAndSort);
-            filterVizite.addEventListener('change', filterAndSort);
-            sortBy.addEventListener('change', filterAndSort);
-
-            clearFilters.addEventListener('click', function() {
-                searchGeneral.value = '';
-                dateFrom.value = '';
-                dateTo.value = '';
-                filterVizite.value = '';
-                sortBy.value = 'data-desc';
-                quickFilters.forEach(btn => btn.classList.remove('active'));
-                filterAndSort();
+            // Auto-submit form on filter changes (optional)
+            const filterInputs = form.querySelectorAll('input, select');
+            filterInputs.forEach(input => {
+                if (input.name !== 'page') { // Don't auto-submit on page changes
+                    input.addEventListener('change', function() {
+                        // Reset to page 1 when filtering
+                        form.querySelector('input[name="page"]').value = 1;
+                        // Optional: auto-submit (remove this if you prefer manual submission)
+                        // form.submit();
+                    });
+                }
             });
-
-            // Initial sort
-            filterAndSort();
         });
     </script>
 }
@@ -574,6 +586,25 @@ else
             opacity: 0.9;
             color: white;
         }
+
+    /* Pagination styling */
+    .pagination .page-link {
+        border-radius: 8px;
+        margin: 0 2px;
+        color: #667eea;
+        border: 1px solid #dee2e6;
+    }
+
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: transparent;
+    }
+
+    .pagination .page-link:hover {
+        color: #667eea;
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+    }
 
     /* Search box styling */
     .search-box {
@@ -792,6 +823,12 @@ else
         box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.075) !important;
     }
 
+    /* Card footer */
+    .card-footer {
+        background-color: #f8f9fa !important;
+        border-top: 1px solid #dee2e6 !important;
+    }
+
     /* Responsive adjustments */
     @@media (max-width: 768px) {
         .page-header-gradient {
@@ -810,4 +847,10 @@ else
             padding: 0.25rem 0.5rem;
             font-size: 0.75rem;
         }
+
+        .pagination .page-link {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
     }
+    </style>

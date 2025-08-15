@@ -14,13 +14,15 @@ namespace pharma.Controllers
             _pharmaContext = pharmaContext;
         }
 
-        public IActionResult Index(int? medId)
+        public IActionResult Index(int? medId, string? search, DateTime? dateFrom, DateTime? dateTo,
+                          string? visitFilter, string sortBy = "data-desc", int page = 1, int pageSize = 50)
         {
             var retete = _pharmaContext.Retete
                 .Include(r => r.pacient)
                 .Include(r => r.medicament)
                 .AsQueryable();
 
+            // Filtrare după medicament
             if (medId.HasValue)
             {
                 retete = retete.Where(r => r.MedicamentId == medId.Value);
@@ -28,7 +30,108 @@ namespace pharma.Controllers
                     .FirstOrDefault(m => m.Id == medId.Value)?.Nume;
             }
 
-            return View(retete.OrderByDescending(r => r.Data).ToList());
+            // Căutare text
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = search.ToLower();
+                retete = retete.Where(r =>
+                    (r.pacient!.Nume + " " + r.pacient.Prenume).ToLower().Contains(searchTerm) ||
+                    (r.medicament!.Nume).ToLower().Contains(searchTerm) ||
+                    (r.Serie != null && r.Serie.ToLower().Contains(searchTerm)) ||
+                    (r.NrReteta != null && r.NrReteta.ToLower().Contains(searchTerm)));
+            }
+
+            // Filtrare după dată
+            if (dateFrom.HasValue)
+            {
+                retete = retete.Where(r => r.Data >= dateFrom.Value);
+            }
+
+            if (dateTo.HasValue)
+            {
+                retete = retete.Where(r => r.Data <= dateTo.Value);
+            }
+
+            // Filtrare vizite
+            if (!string.IsNullOrWhiteSpace(visitFilter))
+            {
+                var today = DateTime.Today;
+                var weekEnd = today.AddDays(7);
+                var monthEnd = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
+                var nextMonthStart = today.AddMonths(1).AddDays(1 - today.Day);
+                var nextMonthEnd = nextMonthStart.AddMonths(1).AddDays(-1);
+
+                switch (visitFilter)
+                {
+                    case "cu-vizite":
+                        retete = retete.Where(r => r.DataUrmatoareiVizite.HasValue);
+                        break;
+                    case "fara-vizite":
+                        retete = retete.Where(r => !r.DataUrmatoareiVizite.HasValue);
+                        break;
+                    case "saptamana":
+                        retete = retete.Where(r => r.DataUrmatoareiVizite.HasValue &&
+                                                 r.DataUrmatoareiVizite.Value >= today &&
+                                                 r.DataUrmatoareiVizite.Value <= weekEnd);
+                        break;
+                    case "luna":
+                        retete = retete.Where(r => r.DataUrmatoareiVizite.HasValue &&
+                                                 r.DataUrmatoareiVizite.Value >= today &&
+                                                 r.DataUrmatoareiVizite.Value <= monthEnd);
+                        break;
+                    case "luna-viitoare":
+                        retete = retete.Where(r => r.DataUrmatoareiVizite.HasValue &&
+                                                 r.DataUrmatoareiVizite.Value >= nextMonthStart &&
+                                                 r.DataUrmatoareiVizite.Value <= nextMonthEnd);
+                        break;
+                }
+            }
+
+            // Sortare
+            switch (sortBy)
+            {
+                case "data-asc":
+                    retete = retete.OrderBy(r => r.Data);
+                    break;
+                case "pacient-asc":
+                    retete = retete.OrderBy(r => r.pacient!.Nume).ThenBy(r => r.pacient!.Prenume);
+                    break;
+                case "pacient-desc":
+                    retete = retete.OrderByDescending(r => r.pacient!.Nume).ThenByDescending(r => r.pacient!.Prenume);
+                    break;
+                case "vizita-asc":
+                    retete = retete.OrderBy(r => r.DataUrmatoareiVizite ?? DateTime.MaxValue);
+                    break;
+                case "vizita-desc":
+                    retete = retete.OrderByDescending(r => r.DataUrmatoareiVizite ?? DateTime.MinValue);
+                    break;
+                default: // "data-desc"
+                    retete = retete.OrderByDescending(r => r.Data);
+                    break;
+            }
+
+            // Paginare
+            var totalItems = retete.Count();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            var pagedItems = retete.Skip((page - 1) * pageSize).Take(pageSize);
+
+            // Convertire la listă
+            var rezultate = pagedItems.ToList();
+
+            // Adaugă informații de paginare la ViewBag
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalItems = totalItems;
+            ViewBag.PageSize = pageSize;
+
+            // Păstrează parametrii de filtrare pentru paginare
+            ViewBag.Search = search;
+            ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
+            ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
+            ViewBag.VisitFilter = visitFilter;
+            ViewBag.SortBy = sortBy;
+
+            return View(rezultate);
         }
 
         [HttpGet]
@@ -179,16 +282,28 @@ namespace pharma.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Delete(int id, int? returnMedId)
         {
-            var reteta = _pharmaContext.Retete.FirstOrDefault(r => r.Id == id);
-            if (reteta == null)
-                return NotFound();
+            try
+            {
+                var reteta = _pharmaContext.Retete.FirstOrDefault(r => r.Id == id);
+                if (reteta == null)
+                {
+                    TempData["Error"] = "Rețeta nu a fost găsită!";
+                    return RedirectToAction("Index");
+                }
 
-            _pharmaContext.Retete.Remove(reteta);
-            _pharmaContext.SaveChanges();
+                _pharmaContext.Retete.Remove(reteta);
+                _pharmaContext.SaveChanges();
 
-            TempData["Success"] = "Rețeta a fost ștearsă cu succes!";
+                TempData["Success"] = "Rețeta a fost ștearsă cu succes!";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "A apărut o eroare la ștergerea rețetei!";
+                // Log error if you have logging set up
+            }
 
             // Return to the medicine details if we came from there, otherwise to general index
             if (returnMedId.HasValue)

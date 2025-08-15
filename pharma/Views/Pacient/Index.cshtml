@@ -2,6 +2,13 @@
 
 @{
     ViewData["Title"] = "Lista pacienți";
+    
+    // Pagination parameters
+    var currentPage = int.TryParse(Context.Request.Query["page"], out var p) ? p : 1;
+    var pageSize = 2;
+    var totalItems = Model.Count();
+    var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+    var pagedItems = Model.OrderBy(p => p.Nume).ThenBy(p => p.Prenume).Skip((currentPage - 1) * pageSize).Take(pageSize);
 }
 
 <!-- Header cu gradient și statistici -->
@@ -14,8 +21,12 @@
             </h2>
             <div class="d-flex gap-3">
                 <div class="stat-card-mini">
-                    <div class="stat-number">@Model.Count()</div>
+                    <div class="stat-number">@totalItems</div>
                     <div class="stat-label">Total pacienți</div>
+                </div>
+                <div class="stat-card-mini">
+                    <div class="stat-number">@currentPage</div>
+                    <div class="stat-label">Pagina @currentPage din @totalPages</div>
                 </div>
             </div>
         </div>
@@ -89,7 +100,7 @@
             </span>
             <span class="badge rounded-pill bg-gradient-secondary px-3 py-2" id="statsVisible">
                 <i class="fas fa-eye me-1"></i>
-                @Model.Count() afișați
+                Afișând @pagedItems.Count() din @totalItems
             </span>
         </div>
     </div>
@@ -112,7 +123,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var pacient in Model)
+                    @foreach (var pacient in pagedItems)
                     {
                         var urmatoareaVizita = pacient.Retete
                         .Where(r => r.DataUrmatoareiVizite.HasValue)
@@ -223,35 +234,6 @@
                                        title="Editează">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-success btn-sm dropdown-toggle"
-                                                data-bs-toggle="dropdown" title="Rețetă nouă">
-                                            <i class="fas fa-file-medical"></i>
-                                        </button>
-                                        @if (pacient.PacientMedicamente.Any())
-                                        {
-                                            <ul class="dropdown-menu">
-                                                @foreach (var pm in pacient.PacientMedicamente)
-                                                {
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           asp-controller="Reteta"
-                                                           asp-action="Create"
-                                                           asp-route-pacientId="@pacient.Id"
-                                                           asp-route-medicamentId="@pm.MedicamentId">
-                                                            <i class="fas fa-pills me-2"></i>@pm.Medicament.Nume
-                                                        </a>
-                                                    </li>
-                                                }
-                                            </ul>
-                                        }
-                                        else
-                                        {
-                                            <ul class="dropdown-menu">
-                                                <li><span class="dropdown-item-text text-muted">Nu are medicamente asociate</span></li>
-                                            </ul>
-                                        }
-                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -260,6 +242,77 @@
             </table>
         </div>
     </div>
+    
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    {
+        <div class="card-footer bg-light">
+            <nav aria-label="Paginare">
+                <ul class="pagination justify-content-center mb-0">
+                    @if (currentPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { page = currentPage - 1 })">
+                                <i class="fas fa-angle-left me-1"></i> Anterior
+                            </a>
+                        </li>
+                    }
+                    
+                    @{
+                        var startPage = Math.Max(1, currentPage - 2);
+                        var endPage = Math.Min(totalPages, currentPage + 2);
+                    }
+                    
+                    @if (startPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { page = 1 })">1</a>
+                        </li>
+                        @if (startPage > 2)
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        }
+                    }
+                    
+                    @for (int i = startPage; i <= endPage; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                        </li>
+                    }
+                    
+                    @if (endPage < totalPages)
+                    {
+                        @if (endPage < totalPages - 1)
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { page = totalPages })">@totalPages</a>
+                        </li>
+                    }
+                    
+                    @if (currentPage < totalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { page = currentPage + 1 })">
+                                Următoarea <i class="fas fa-angle-right ms-1"></i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+            
+            <!-- Pagination info -->
+            <div class="text-center mt-2 text-muted small">
+                Afișând @((currentPage - 1) * pageSize + 1) - @(Math.Min(currentPage * pageSize, totalItems)) din @totalItems pacienți
+            </div>
+        </div>
+    }
 </div>
 
 <!-- No results message -->
@@ -310,7 +363,6 @@
             const patientRows = document.querySelectorAll('.patient-row');
             const patientsTable = document.getElementById('patientsTable');
             const noResults = document.getElementById('noResults');
-            const statsVisible = document.getElementById('statsVisible');
 
             function filterAndSort() {
                 const searchTerm = searchGeneral.value.toLowerCase();
@@ -384,12 +436,6 @@
                 visibleRows.forEach(row => {
                     tbody.appendChild(row);
                 });
-
-                // Update visible count
-                const visibleSpan = statsVisible.querySelector('.fa-eye').nextSibling;
-                if (visibleSpan) {
-                    visibleSpan.textContent = ` ${visibleRows.length} afișați`;
-                }
 
                 // Show/hide no results
                 if (visibleRows.length === 0) {
@@ -554,6 +600,25 @@
             color: white;
         }
 
+    /* Pagination styling */
+    .pagination .page-link {
+        border-radius: 8px;
+        margin: 0 2px;
+        color: #667eea;
+        border: 1px solid #dee2e6;
+    }
+
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: transparent;
+    }
+
+    .pagination .page-link:hover {
+        color: #667eea;
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+    }
+
     /* Search box styling */
     .search-box {
         position: relative;
@@ -667,6 +732,12 @@
         border-radius: 12px 12px 0 0;
     }
 
+    /* Card footer */
+    .card-footer {
+        background-color: #f8f9fa !important;
+        border-top: 1px solid #dee2e6 !important;
+    }
+
     /* Responsive */
     @@media (max-width: 768px) {
         .page-header-gradient {
@@ -676,6 +747,14 @@
         .stat-card-mini {
             padding: 0.5rem 1rem;
         }
-    }
 
-    </style>
+        .table {
+            font-size: 0.8rem;
+        }
+
+        .pagination .page-link {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+    }
+</style>

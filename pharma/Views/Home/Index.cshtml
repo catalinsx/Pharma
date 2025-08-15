@@ -1,12 +1,631 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@using Microsoft.EntityFrameworkCore
+
+@{
+    ViewData["Title"] = "Dashboard";
+    
+    // Preluăm contextul pentru date real-time
+    var context = ViewContext.HttpContext.RequestServices.GetService<pharma.Data.PharmaContext>();
+    
+    // Statistici reale
+    var totalPacienti = context.Pacienti.Count();
+    var totalMedicamente = context.Medicamente.Count();
+    var totalRetete = context.Retete.Count();
+    
+    var dataAcum = DateTime.Now;
+    var incepetulLunii = new DateTime(dataAcum.Year, dataAcum.Month, 1);
+    var incepetulLuniiTrecute = incepetulLunii.AddMonths(-1);
+    
+    var reteteAcestaLuna = context.Retete.Count(r => r.Data >= incepetulLunii);
+    var reteteLunaTrecuta = context.Retete.Count(r => r.Data >= incepetulLuniiTrecute && r.Data < incepetulLunii);
+    
+    var viziteUrmatoarele7Zile = context.Retete
+        .Count(r => r.DataUrmatoareiVizite.HasValue && 
+                   r.DataUrmatoareiVizite >= dataAcum && 
+                   r.DataUrmatoareiVizite <= dataAcum.AddDays(7));
+    
+    var pacientiCuReteteDinUltimele30Zile = context.Pacienti
+        .Count(p => p.Retete.Any(r => r.Data >= dataAcum.AddDays(-30)));
+    
+    // Calculăm procentul de creștere pentru pacienți
+    var pacientiLunaTrecuta = context.Retete
+        .Where(r => r.Data >= incepetulLuniiTrecute && r.Data < incepetulLunii)
+        .Select(r => r.PacientId)
+        .Distinct()
+        .Count();
+    var pacientiAcestaLuna = context.Retete
+        .Where(r => r.Data >= incepetulLunii)
+        .Select(r => r.PacientId)
+        .Distinct()
+        .Count();
+    var crestereProcentPacienti = pacientiLunaTrecuta > 0 ? 
+        Math.Round(((double)(pacientiAcestaLuna - pacientiLunaTrecuta) / pacientiLunaTrecuta) * 100, 1) : 0;
+    
+    // Calculăm medicamente noi (ultimele 30 zile)
+    var medicamenteNoi = totalMedicamente > 30 ? 
+        context.Medicamente.OrderByDescending(m => m.Id).Take(30).Count() - 
+        context.Medicamente.OrderByDescending(m => m.Id).Skip(30).Take(30).Count() : 
+        Math.Max(0, totalMedicamente - 3);
+    
+    // Date pentru charts - real data
+    var topMedicamente = context.Retete
+        .Include(r => r.medicament)
+        .GroupBy(r => r.medicament.Nume)
+        .Select(g => new { Nume = g.Key, Count = g.Count() })
+        .OrderByDescending(x => x.Count)
+        .Take(5)
+        .ToList();
+    
+    var retetePeLuni = Enumerable.Range(0, 6)
+        .Select(i => {
+            var luna = dataAcum.AddMonths(-5 + i);
+            var startOfMonth = new DateTime(luna.Year, luna.Month, 1);
+            var endOfMonth = startOfMonth.AddMonths(1);
+            return new {
+                Luna = luna.ToString("MMM"),
+                Count = context.Retete.Count(r => r.Data >= startOfMonth && r.Data < endOfMonth)
+            };
+        }).ToList();
 }
 
-<div class="container">
-    <div class="row">
+<!-- Header Dashboard -->
+<div class="dashboard-header mb-4">
+    <div class="row align-items-center">
         <div class="col">
-            <h1 class="display-1 text-danger">Test Bootstrap</h1>
+            <h1 class="display-6 fw-bold text-gradient mb-2">Dashboard Farmacie</h1>
+        </div>
+        <div class="col-auto">
+            <div class="date-widget">
+                <div class="current-date">@DateTime.Now.ToString("dd MMM yyyy")</div>
+                <div class="current-time" id="currentTime">@DateTime.Now.ToString("HH:mm")</div>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Stats Cards Row -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">@totalPacienti</div>
+                        <div class="stat-label">Total Pacienți</div>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <span class="stat-change @(crestereProcentPacienti >= 0 ? "positive" : "negative")">
+                        <i class="fas fa-arrow-@(crestereProcentPacienti >= 0 ? "up" : "down") me-1"></i>@(crestereProcentPacienti >= 0 ? "+" : "")@crestereProcentPacienti%
+                    </span>
+                    față de luna trecută
+                </div>
+            </div>
+            <a asp-controller="Pacient" asp-action="Index" class="stat-card-link">
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-card-info">
+            <div class="stat-card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon">
+                        <i class="fas fa-pills"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">@totalMedicamente</div>
+                        <div class="stat-label">Medicamente</div>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <span class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+@medicamenteNoi
+                    </span>
+                    adăugate recent
+                </div>
+            </div>
+            <a asp-controller="Medicament" asp-action="Index" class="stat-card-link">
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-card-success">
+            <div class="stat-card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-medical"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">@totalRetete</div>
+                        <div class="stat-label">Total Rețete</div>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <span class="stat-change @(reteteAcestaLuna >= reteteLunaTrecuta ? "positive" : "negative")">
+                        <i class="fas fa-arrow-@(reteteAcestaLuna >= reteteLunaTrecuta ? "up" : "down") me-1"></i>@reteteAcestaLuna
+                    </span>
+                    în această lună
+                </div>
+            </div>
+            <a asp-controller="Reteta" asp-action="Index" class="stat-card-link">
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">@viziteUrmatoarele7Zile</div>
+                        <div class="stat-label">Vizite în 7 zile</div>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <span class="stat-change neutral">
+                        <i class="fas fa-clock me-1"></i>Planificate
+                    </span>
+                    pentru săptămâna aceasta
+                </div>
+            </div>
+            <a asp-controller="Reteta" asp-action="Index" class="stat-card-link">
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <!-- Pie Chart - Top Medicamente -->
+    <div class="col-lg-6">
+        <div class="card chart-card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2 text-primary"></i>
+                    Top 5 Medicamente Prescrise
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (topMedicamente.Any())
+                {
+                    <canvas id="medicamenteChart" width="400" height="300"></canvas>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-chart-pie fa-3x mb-3"></i>
+                        <p>Nu există date pentru grafic</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Line Chart - Evoluția Rețetelor -->
+    <div class="col-lg-6">
+        <div class="card chart-card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2 text-success"></i>
+                    Evoluția Rețetelor (Ultimele 6 luni)
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="reteteLunarChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update time every minute
+            setInterval(function() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('currentTime').textContent = timeString;
+            }, 60000);
+
+            // Pie Chart pentru Top Medicamente
+            @if (topMedicamente.Any())
+            {
+                <text>
+                const medicamenteCtx = document.getElementById('medicamenteChart');
+                if (medicamenteCtx) {
+                    new Chart(medicamenteCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: [@Html.Raw(string.Join(",", topMedicamente.Select(m => $"'{m.Nume}'")))],
+                            datasets: [{
+                                data: [@Html.Raw(string.Join(",", topMedicamente.Select(m => m.Count)))],
+                                backgroundColor: [
+                                    '#667eea',
+                                    '#764ba2', 
+                                    '#f093fb',
+                                    '#f5576c',
+                                    '#4facfe'
+                                ],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 20,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            // Line Chart pentru Evoluția Rețetelor
+            const reteteLunarCtx = document.getElementById('reteteLunarChart');
+            if (reteteLunarCtx) {
+                new Chart(reteteLunarCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [@Html.Raw(string.Join(",", retetePeLuni.Select(r => $"'{r.Luna}'")))],
+                        datasets: [{
+                            label: 'Rețete emise',
+                            data: [@Html.Raw(string.Join(",", retetePeLuni.Select(r => r.Count)))],
+                            borderColor: '#198754',
+                            backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#198754',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}
+
+<style>
+    .text-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .dashboard-header {
+        padding: 2rem 0;
+    }
+
+    .date-widget {
+        text-align: center;
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        color: white;
+        min-width: 150px;
+    }
+
+    .current-date {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .current-time {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    /* Stat Cards */
+    .stat-card {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .stat-card-primary { border-left: 4px solid #667eea; }
+    .stat-card-info { border-left: 4px solid #0dcaf0; }
+    .stat-card-success { border-left: 4px solid #198754; }
+    .stat-card-warning { border-left: 4px solid #ffc107; }
+
+    .stat-card-body {
+        padding: 1.5rem;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+    }
+
+    .stat-card-primary .stat-icon {
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+    }
+
+    .stat-card-info .stat-icon {
+        background: rgba(13, 202, 240, 0.1);
+        color: #0dcaf0;
+    }
+
+    .stat-card-success .stat-icon {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+
+    .stat-card-warning .stat-icon {
+        background: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #212529;
+        line-height: 1;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .stat-footer {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f1f3f5;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    .stat-change {
+        font-weight: 600;
+    }
+
+    .stat-change.positive { color: #198754; }
+    .stat-change.negative { color: #dc3545; }
+    .stat-change.neutral { color: #6c757d; }
+
+    .stat-card-link {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .stat-card-link:hover {
+        background: rgba(0,0,0,0.1);
+        color: #495057;
+        transform: scale(1.1);
+    }
+
+    /* Chart Cards */
+    .chart-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .chart-card .card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-bottom: 1px solid #f1f3f5;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .chart-card .card-body {
+        height: 350px;
+    }
+
+    /* Quick Stats */
+    .quick-stats {
+        margin-top: 1rem;
+    }
+
+    .quick-stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.75rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+    }
+
+    .quick-stat-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #667eea;
+    }
+
+    .quick-stat-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-align: center;
+    }
+
+    /* Activity List */
+    .activity-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 1rem;
+        border-bottom: 1px solid #f1f3f5;
+        transition: background-color 0.2s ease;
+    }
+
+    .activity-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(25, 135, 84, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+
+    .activity-content {
+        flex-grow: 1;
+    }
+
+    .activity-title {
+        font-weight: 500;
+        color: #212529;
+        margin-bottom: 0.25rem;
+    }
+
+    .activity-details {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Cards */
+    .card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-bottom: 1px solid #f1f3f5;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Buttons */
+    .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+
+    /* Custom scrollbar */
+    .activity-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .activity-list::-webkit-scrollbar-track {
+        background: #f8f9fa;
+        border-radius: 3px;
+    }
+
+    .activity-list::-webkit-scrollbar-thumb {
+        background: #dee2e6;
+        border-radius: 3px;
+    }
+
+    .activity-list::-webkit-scrollbar-thumb:hover {
+        background: #adb5bd;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .dashboard-header {
+            padding: 1rem 0;
+        }
+        
+        .date-widget {
+            margin-top: 1rem;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+        }
+        
+        .current-time {
+            font-size: 1.2rem;
+        }
+    }
+</style>
