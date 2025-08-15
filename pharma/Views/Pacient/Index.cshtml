@@ -4,38 +4,41 @@
     ViewData["Title"] = "Lista pacienți";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="mb-1">
-            <i class="fas fa-users me-2"></i>
-            Lista pacienți
-        </h2>
-        <p class="text-muted mb-0">@Model.Count() pacienți înregistrați</p>
+<!-- Header cu gradient și statistici -->
+<div class="page-header-gradient mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-2 text-white">
+                <i class="fas fa-users me-2"></i>
+                Listă Pacienți
+            </h2>
+            <div class="d-flex gap-3">
+                <div class="stat-card-mini">
+                    <div class="stat-number">@Model.Count()</div>
+                    <div class="stat-label">Total pacienți</div>
+                </div>
+            </div>
+        </div>
+        <a asp-action="Create" class="btn btn-light btn-lg shadow-sm">
+            <i class="fas fa-user-plus me-2"></i> Pacient nou
+        </a>
     </div>
-    <a asp-action="Create" class="btn btn-primary">
-        <i class="fas fa-user-plus me-1"></i> Adaugă pacient
-    </a>
 </div>
 
 <!-- Căutare și filtrare -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h6 class="mb-0">
-            <i class="fas fa-search me-2"></i>
-            Căutare și filtrare
-        </h6>
-    </div>
+<div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-4">
-                <label for="searchGeneral" class="form-label">Căutare generală</label>
-                <input type="text" id="searchGeneral" class="form-control"
-                       placeholder="Nume, prenume, CNP, telefon...">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchGeneral" class="form-control form-control-lg ps-5"
+                           placeholder="Caută pacient (nume, prenume, CNP, telefon...)">
+                </div>
             </div>
             <div class="col-md-3">
-                <label for="filterMedicament" class="form-label">Medicament</label>
-                <select id="filterMedicament" class="form-select">
-                    <option value="">Toate medicamentele</option>
+                <select id="filterMedicament" class="form-select form-select-lg">
+                    <option value="">🏥 Toate medicamentele</option>
                     @{
                         var allMedicaments = Model.SelectMany(p => p.PacientMedicamente.Select(pm => pm.Medicament))
                         .Distinct()
@@ -48,67 +51,64 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="filterRetete" class="form-label">Rețete</label>
-                <select id="filterRetete" class="form-select">
-                    <option value="">Toți pacienții</option>
-                    <option value="cu-retete">Cu rețete</option>
-                    <option value="fara-retete">Fără rețete</option>
+                <select id="filterRetete" class="form-select form-select-lg">
+                    <option value="">📋 Toți pacienții</option>
+                    <option value="cu-retete">✅ Cu rețete</option>
+                    <option value="fara-retete">⚠️ Fără rețete</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="sortBy" class="form-label">Sortare</label>
-                <select id="sortBy" class="form-select">
-                    <option value="nume-asc">Nume (A-Z)</option>
-                    <option value="nume-desc">Nume (Z-A)</option>
-                    <option value="retete-desc">Cele mai multe rețete</option>
-                    <option value="retete-asc">Cele mai puține rețete</option>
-                    <option value="recent">Adăugați recent</option>
+                <select id="sortBy" class="form-select form-select-lg">
+                    <option value="nume-asc">📝 Nume (A-Z)</option>
+                    <option value="nume-desc">📝 Nume (Z-A)</option>
+                    <option value="retete-desc">📋 Cele mai multe rețete</option>
+                    <option value="retete-asc">📋 Cele mai puține rețete</option>
+                    <option value="recent">🆕 Adăugați recent</option>
                 </select>
             </div>
             <div class="col-md-1">
-                <label class="form-label">&nbsp;</label>
-                <button type="button" id="clearFilters" class="btn btn-outline-secondary w-100">
+                <button type="button" id="clearFilters" class="btn btn-outline-secondary btn-lg w-100" title="Șterge filtrele">
                     <i class="fas fa-eraser"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Quick stats -->
-        <div class="row mt-3">
-            <div class="col">
-                <div class="d-flex gap-3 text-center">
-                    <div class="badge bg-primary p-2">
-                        <span class="d-block h6 mb-0" id="statsTotal">@Model.Count()</span>
-                        <small>Total</small>
-                    </div>
-                    <div class="badge bg-success p-2">
-                        <span class="d-block h6 mb-0" id="statsCuRetete">@Model.Count(p => p.Retete.Any())</span>
-                        <small>Cu rețete</small>
-                    </div>
-                    <div class="badge bg-info p-2">
-                        <span class="d-block h6 mb-0" id="statsVisible">@Model.Count()</span>
-                        <small>Afișați</small>
-                    </div>
-                </div>
-            </div>
+        <!-- Quick Stats Pills -->
+        <div class="mt-3 d-flex flex-wrap gap-2">
+            <span class="badge rounded-pill bg-gradient-primary px-3 py-2">
+                <i class="fas fa-check-circle me-1"></i>
+                @Model.Count(p => p.Retete.Any()) cu rețete active
+            </span>
+            <span class="badge rounded-pill bg-gradient-info px-3 py-2">
+                <i class="fas fa-pills me-1"></i>
+                @Model.Count(p => p.PacientMedicamente.Any()) cu medicamente
+            </span>
+            <span class="badge rounded-pill bg-gradient-success px-3 py-2">
+                <i class="fas fa-calendar-check me-1"></i>
+                @Model.Count(p => p.Retete.Any(r => r.DataUrmatoareiVizite.HasValue && r.DataUrmatoareiVizite > DateTime.Now)) cu vizite programate
+            </span>
+            <span class="badge rounded-pill bg-gradient-secondary px-3 py-2" id="statsVisible">
+                <i class="fas fa-eye me-1"></i>
+                @Model.Count() afișați
+            </span>
         </div>
     </div>
 </div>
 
 <!-- Lista pacienți în format tabel -->
-<div class="card">
+<div class="card border-0 shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0" id="patientsTable">
-                <thead class="table-light">
+                <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
                     <tr>
-                        <th width="5%"><i class="fas fa-user"></i></th>
-                        <th width="25%">Pacient</th>
-                        <th width="15%">Contact</th>
-                        <th width="20%">Medicamente</th>
-                        <th width="10%" class="text-center">Rețete</th>
-                        <th width="15%">Următoarea vizită</th>
-                        <th width="10%" class="text-center">Acțiuni</th>
+                        <th class="text-white border-0" width="5%"><i class="fas fa-user"></i></th>
+                        <th class="text-white border-0" width="25%">Pacient</th>
+                        <th class="text-white border-0" width="15%">Contact</th>
+                        <th class="text-white border-0" width="20%">Medicamente</th>
+                        <th class="text-white border-0 text-center" width="10%">Rețete</th>
+                        <th class="text-white border-0" width="15%">Următoarea vizită</th>
+                        <th class="text-white border-0 text-center" width="10%">Acțiuni</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -132,18 +132,19 @@
 
                             <!-- Avatar -->
                             <td>
-                                <span class="badge bg-primary rounded-pill avatar-badge">
-                                    @pacient.Nume.Substring(0, 1)@pacient.Prenume.Substring(0, 1)
-                                </span>
+                                <div class="patient-avatar">
+                                    <span class="badge bg-gradient-primary rounded-pill">
+                                        @pacient.Nume.Substring(0, 1)@pacient.Prenume.Substring(0, 1)
+                                    </span>
+                                </div>
                             </td>
 
                             <!-- Pacient Info -->
                             <td>
                                 <div>
-                                    <strong>@pacient.Nume @pacient.Prenume</strong>
+                                    <h6 class="mb-0">@pacient.Nume @pacient.Prenume</h6>
                                     @if (!string.IsNullOrEmpty(pacient.CNP))
                                     {
-                                        <br>
                                         <small class="text-muted">CNP: @pacient.CNP</small>
                                     }
                                 </div>
@@ -153,8 +154,10 @@
                             <td>
                                 @if (!string.IsNullOrEmpty(pacient.NrTelefon))
                                 {
-                                    <i class="fas fa-phone me-1"></i>
-                                    @pacient.NrTelefon
+                                    <span class="badge bg-light text-dark">
+                                        <i class="fas fa-phone me-1"></i>
+                                        @pacient.NrTelefon
+                                    </span>
                                 }
                                 else
                                 {
@@ -169,11 +172,11 @@
                                     <div class="d-flex flex-wrap gap-1">
                                         @foreach (var pm in pacient.PacientMedicamente.Take(2))
                                         {
-                                            <span class="badge bg-light text-dark small">@pm.Medicament.Nume</span>
+                                            <span class="badge bg-info">@pm.Medicament.Nume</span>
                                         }
                                         @if (pacient.PacientMedicamente.Count > 2)
                                         {
-                                            <span class="badge bg-secondary small">+@(pacient.PacientMedicamente.Count - 2)</span>
+                                            <span class="badge bg-secondary">+@(pacient.PacientMedicamente.Count - 2)</span>
                                         }
                                     </div>
                                 }
@@ -185,17 +188,20 @@
 
                             <!-- Rețete Count -->
                             <td class="text-center">
-                                <span class="badge @(pacient.Retete.Count > 0 ? "bg-success" : "bg-secondary")">
+                                <span class="badge @(pacient.Retete.Count > 0 ? "bg-success" : "bg-secondary") rounded-pill px-3">
                                     @pacient.Retete.Count
                                 </span>
                             </td>
 
-                            <!-- Următoarea vizită - SIMPLIFICAT -->
+                            <!-- Următoarea vizită -->
                             <td>
                                 @if (urmatoareaVizita != null)
                                 {
-                                    <span class="text-info">
-                                        @urmatoareaVizita.DataUrmatoareiVizite?.ToString("dd.MM.yyyy")
+                                    var vizitaData = urmatoareaVizita.DataUrmatoareiVizite.Value;
+                                    var classCuloare = vizitaData <= DateTime.Now.AddDays(3) ? "text-warning" : "text-info";
+                                    <span class="@classCuloare">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        @vizitaData.ToString("dd.MM.yyyy")
                                     </span>
                                 }
                                 else
@@ -213,7 +219,7 @@
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     <a asp-action="Edit" asp-route-id="@pacient.Id"
-                                       class="btn btn-outline-secondary btn-sm"
+                                       class="btn btn-outline-warning btn-sm"
                                        title="Editează">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -258,9 +264,11 @@
 
 <!-- No results message -->
 <div id="noResults" class="text-center py-5 d-none">
-    <i class="fas fa-search fa-3x text-muted mb-3"></i>
-    <h4 class="text-muted">Nu au fost găsiți pacienți</h4>
-    <p class="text-muted">Încearcă să modifici criteriile de căutare</p>
+    <div class="empty-state">
+        <i class="fas fa-search fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">Nu au fost găsiți pacienți</h4>
+        <p class="text-muted">Încearcă să modifici criteriile de căutare</p>
+    </div>
 </div>
 
 <!-- Modal pentru detalii pacient -->
@@ -378,15 +386,18 @@
                 });
 
                 // Update visible count
-                statsVisible.textContent = visibleRows.length;
+                const visibleSpan = statsVisible.querySelector('.fa-eye').nextSibling;
+                if (visibleSpan) {
+                    visibleSpan.textContent = ` ${visibleRows.length} afișați`;
+                }
 
                 // Show/hide no results
                 if (visibleRows.length === 0) {
                     noResults.classList.remove('d-none');
-                    patientsTable.classList.add('d-none');
+                    patientsTable.parentElement.parentElement.classList.add('d-none');
                 } else {
                     noResults.classList.add('d-none');
-                    patientsTable.classList.remove('d-none');
+                    patientsTable.parentElement.parentElement.classList.remove('d-none');
                 }
             }
 
@@ -404,7 +415,7 @@
                 filterAndSort();
             });
 
-            // Initial sort
+            // Initial load
             filterAndSort();
         });
 
@@ -416,11 +427,11 @@
 
             // Show loading
             content.innerHTML = `
-                                <div class="text-center">
-                                    <div class="spinner-border" role="status">
-                                        <span class="visually-hidden">Se încarcă...</span>
-                                    </div>
-                                </div>`;
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Se încarcă...</span>
+                    </div>
+                </div>`;
 
             modal.show();
 
@@ -429,73 +440,73 @@
                 const data = await response.json();
 
                 content.innerHTML = `
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6 class="text-muted">Informații personale</h6>
-                                            <table class="table table-sm">
-                                                <tr>
-                                                    <td><strong>Nume complet:</strong></td>
-                                                    <td>${data.nume} ${data.prenume}</td>
-                                                </tr>
-                                                ${data.cnp ? `<tr><td><strong>CNP:</strong></td><td>${data.cnp}</td></tr>` : ''}
-                                                ${data.nrTelefon ? `<tr><td><strong>Telefon:</strong></td><td>${data.nrTelefon}</td></tr>` : ''}
-                                            </table>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Informații personale</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Nume complet:</strong></td>
+                                    <td>${data.nume} ${data.prenume}</td>
+                                </tr>
+                                ${data.cnp ? `<tr><td><strong>CNP:</strong></td><td>${data.cnp}</td></tr>` : ''}
+                                ${data.nrTelefon ? `<tr><td><strong>Telefon:</strong></td><td>${data.nrTelefon}</td></tr>` : ''}
+                            </table>
 
-                                            ${data.alteDetalii ? `
-                                            <h6 class="text-muted mt-3">Alte detalii</h6>
-                                            <div class="alert alert-light">
-                                                ${data.alteDetalii}
-                                            </div>` : ''}
+                            ${data.alteDetalii ? `
+                            <h6 class="text-muted mt-3">Alte detalii</h6>
+                            <div class="alert alert-light">
+                                ${data.alteDetalii}
+                            </div>` : ''}
 
-                                            ${data.urmatoareaVizita ? `
-                                            <h6 class="text-muted mt-3">Următoarea vizită</h6>
-                                            <div class="alert alert-info">
-                                                <i class="fas fa-calendar me-2"></i>
-                                                ${data.urmatoareaVizita}
-                                            </div>` : ''}
-                                        </div>
+                            ${data.urmatoareaVizita ? `
+                            <h6 class="text-muted mt-3">Următoarea vizită</h6>
+                            <div class="alert alert-info">
+                                <i class="fas fa-calendar me-2"></i>
+                                ${data.urmatoareaVizita}
+                            </div>` : ''}
+                        </div>
 
-                                        <div class="col-md-6">
-                                            <h6 class="text-muted">Medicamente asociate</h6>
-                                            ${data.medicamente.length > 0 ? `
-                                                <div class="d-flex flex-wrap gap-1 mb-3">
-                                                    ${data.medicamente.map(m => `<span class="badge bg-info">${m.nume}</span>`).join('')}
-                                                </div>
-                                            ` : '<p class="text-muted">Nu are medicamente asociate</p>'}
-                                        </div>
-                                    </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Medicamente asociate</h6>
+                            ${data.medicamente.length > 0 ? `
+                                <div class="d-flex flex-wrap gap-1 mb-3">
+                                    ${data.medicamente.map(m => `<span class="badge bg-info">${m.nume}</span>`).join('')}
+                                </div>
+                            ` : '<p class="text-muted">Nu are medicamente asociate</p>'}
+                        </div>
+                    </div>
 
-                                    ${data.retete.length > 0 ? `
-                                    <div class="row mt-3">
-                                        <div class="col">
-                                            <h6 class="text-muted">Rețete recente (ultimele 5)</h6>
-                                            <div class="table-responsive">
-                                                <table class="table table-sm">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Data</th>
-                                                            <th>Medicament</th>
-                                                            <th>Serie</th>
-                                                            <th>Nr. rețetă</th>
-                                                            <th>Următoarea vizită</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        ${data.retete.slice(0, 5).map(r => `
-                                                            <tr>
-                                                                <td>${r.data}</td>
-                                                                <td><span class="badge bg-light text-dark">${r.medicament}</span></td>
-                                                                <td>${r.serie || '-'}</td>
-                                                                <td>${r.nrReteta || '-'}</td>
-                                                                <td>${r.dataUrmatoareiVizite || '-'}</td>
-                                                            </tr>
-                                                        `).join('')}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    ` : ''}`;
+                    ${data.retete.length > 0 ? `
+                    <div class="row mt-3">
+                        <div class="col">
+                            <h6 class="text-muted">Rețete recente (ultimele 5)</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Medicament</th>
+                                            <th>Serie</th>
+                                            <th>Nr. rețetă</th>
+                                            <th>Următoarea vizită</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.retete.slice(0, 5).map(r => `
+                                            <tr>
+                                                <td>${r.data}</td>
+                                                <td><span class="badge bg-light text-dark">${r.medicament}</span></td>
+                                                <td>${r.serie || '-'}</td>
+                                                <td>${r.nrReteta || '-'}</td>
+                                                <td>${r.dataUrmatoareiVizite || '-'}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}`;
 
                 editBtn.onclick = () => {
                     window.location.href = `/Pacient/Edit/${patientId}`;
@@ -503,51 +514,168 @@
 
             } catch (error) {
                 content.innerHTML = `
-                                    <div class="alert alert-danger">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        Eroare la încărcarea datelor pacientului.
-                                    </div>`;
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Eroare la încărcarea datelor pacientului.
+                    </div>`;
             }
         }
     </script>
 }
 
 <style>
-    .patient-row:hover {
-        background-color: #f8f9fa;
+    /* Page header gradient - same as medicamente */
+    .page-header-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 12px;
+        color: white;
     }
 
-    .avatar-badge {
-        width: 32px;
-        height: 32px;
+    /* Mini stat cards in header */
+    .stat-card-mini {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+        .stat-card-mini .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .stat-card-mini .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            opacity: 0.9;
+            color: white;
+        }
+
+    /* Search box styling */
+    .search-box {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 1;
+    }
+
+    /* Patient avatar styling */
+    .patient-avatar .badge {
+        width: 35px;
+        height: 35px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: bold;
     }
 
-    .badge.bg-light {
-        border: 1px solid #dee2e6;
+    /* Gradient badges */
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
 
-    .btn-group .btn {
-        border-radius: 0.25rem !important;
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
     }
 
-        .btn-group .btn + .btn {
-            margin-left: 2px;
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #198754 0%, #157347 100%);
+    }
+
+    .bg-gradient-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+
+    .table {
+        font-size: 0.9rem;
+    }
+
+        .table thead th {
+            border: none !important;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1rem 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
         }
 
-    .table th {
-        border-top: none;
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: #495057;
+        .table tbody td {
+            vertical-align: middle;
+            padding: 0.75rem;
+            border-color: #f1f3f5;
+        }
+
+    .patient-row:hover {
+        background-color: rgba(102, 126, 234, 0.05);
     }
 
-    .table td {
-        vertical-align: middle;
-        font-size: 0.9rem;
+    /* Empty state */
+    .empty-state {
+        padding: 3rem;
+        background: #f8f9fa;
+        border-radius: 12px;
     }
-</style>
+
+    /* Form controls */
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+    .form-control-lg, .form-select-lg {
+        padding: 0.75rem 1rem;
+    }
+
+    /* Button improvements */
+    .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+    /* Modal styling */
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+        border-radius: 12px 12px 0 0;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .page-header-gradient {
+            padding: 1rem;
+        }
+
+        .stat-card-mini {
+            padding: 0.5rem 1rem;
+        }
+    }
+
+    </style>

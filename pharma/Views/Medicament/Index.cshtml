@@ -17,19 +17,11 @@
                     <div class="stat-number">@Model.Count()</div>
                     <div class="stat-label">Total medicamente</div>
                 </div>
-                <div class="stat-card-mini">
-                    <div class="stat-number">@Model.Sum(m => m.PacientMedicamente?.Count ?? 0)</div>
-                    <div class="stat-label">Asocieri pacienți</div>
-                </div>
-                <div class="stat-card-mini">
-                    <div class="stat-number">@Model.Sum(m => m.Retete?.Count ?? 0)</div>
-                    <div class="stat-label">Total rețete</div>
-                </div>
             </div>
         </div>
-        <a asp-action="Create" class="btn btn-light btn-lg shadow-sm">
+        <button class="btn btn-light btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#addMedicamentModal">
             <i class="fas fa-plus-circle me-2"></i> Medicament nou
-        </a>
+        </button>
     </div>
 </div>
 
@@ -55,14 +47,6 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <select id="filterStatus" class="form-select form-select-lg">
-                    <option value="">🎯 Toate statusurile</option>
-                    <option value="active">✅ Active (cu rețete)</option>
-                    <option value="ready">⏳ Pregătite (cu pacienți)</option>
-                    <option value="inactive">⚠️ Inactive (fără pacienți)</option>
-                </select>
-            </div>
-            <div class="col-md-2">
                 <div class="btn-group w-100" role="group">
                     <input type="radio" class="btn-check" name="viewMode" id="cardView" value="card" checked>
                     <label class="btn btn-outline-primary" for="cardView">
@@ -76,22 +60,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Quick Stats Pills -->
-        <div class="mt-3 d-flex flex-wrap gap-2">
-            <span class="badge rounded-pill bg-gradient-primary px-3 py-2">
-                <i class="fas fa-check-circle me-1"></i>
-                @Model.Count(m => m.Retete?.Any() == true) cu rețete active
-            </span>
-            <span class="badge rounded-pill bg-gradient-info px-3 py-2">
-                <i class="fas fa-users me-1"></i>
-                @Model.Count(m => m.PacientMedicamente?.Any() == true) cu pacienți
-            </span>
-            <span class="badge rounded-pill bg-gradient-warning px-3 py-2">
-                <i class="fas fa-exclamation-triangle me-1"></i>
-                @Model.Count(m => !m.PacientMedicamente?.Any() == true) fără pacienți
-            </span>
-        </div>
     </div>
 </div>
 
@@ -102,24 +70,13 @@
         {
             var numarPacienti = med.PacientMedicamente?.Count ?? 0;
             var numarRetete = med.Retete?.Count ?? 0;
-            var statusClass = numarRetete > 0 ? "status-active" : numarPacienti > 0 ? "status-ready" : "status-inactive";
-            var statusText = numarRetete > 0 ? "Activ" : numarPacienti > 0 ? "Pregătit" : "Inactiv";
-            var statusIcon = numarRetete > 0 ? "check-circle" : numarPacienti > 0 ? "clock" : "exclamation-triangle";
 
             <div class="col-xl-3 col-lg-4 col-md-6 medicament-card"
-                 data-id="@med.Id"
                  data-nume="@med.Nume.ToLower()"
                  data-pacienti="@numarPacienti"
-                 data-retete="@numarRetete"
-                 data-status="@(numarRetete > 0 ? "active" : numarPacienti > 0 ? "ready" : "inactive")">
+                 data-retete="@numarRetete">
 
-                <div class="card medicine-card h-100 @statusClass">
-                    <!-- Status Badge -->
-                    <div class="status-badge">
-                        <i class="fas fa-@statusIcon"></i>
-                        <span>@statusText</span>
-                    </div>
-
+                <div class="card medicine-card h-100">
                     <!-- Card Body -->
                     <div class="card-body">
                         <!-- Medicine Icon and Name -->
@@ -128,7 +85,6 @@
                                 <i class="fas fa-pills"></i>
                             </div>
                             <h5 class="card-title mb-1">@med.Nume</h5>
-                            <small class="text-muted">ID: #@med.Id</small>
                         </div>
 
                         <!-- Statistics -->
@@ -233,7 +189,6 @@
                     <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                         <tr>
                             <th class="text-white border-0">Medicament</th>
-                            <th class="text-white border-0 text-center">Status</th>
                             <th class="text-white border-0 text-center">Pacienți</th>
                             <th class="text-white border-0 text-center">Rețete</th>
                             <th class="text-white border-0 text-center">Acțiuni</th>
@@ -246,11 +201,9 @@
                             var numarRetete = med.Retete?.Count ?? 0;
 
                             <tr class="medicament-row"
-                                data-id="@med.Id"
                                 data-nume="@med.Nume.ToLower()"
                                 data-pacienti="@numarPacienti"
-                                data-retete="@numarRetete"
-                                data-status="@(numarRetete > 0 ? "active" : numarPacienti > 0 ? "ready" : "inactive")">
+                                data-retete="@numarRetete">
 
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -259,30 +212,8 @@
                                         </div>
                                         <div>
                                             <h6 class="mb-0">@med.Nume</h6>
-                                            <small class="text-muted">ID: #@med.Id</small>
                                         </div>
                                     </div>
-                                </td>
-
-                                <td class="text-center">
-                                    @if (numarRetete > 0)
-                                    {
-                                        <span class="badge bg-success">
-                                            <i class="fas fa-check-circle me-1"></i>Activ
-                                        </span>
-                                    }
-                                    else if (numarPacienti > 0)
-                                    {
-                                        <span class="badge bg-info">
-                                            <i class="fas fa-clock me-1"></i>Pregătit
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-warning">
-                                            <i class="fas fa-exclamation-triangle me-1"></i>Inactiv
-                                        </span>
-                                    }
                                 </td>
 
                                 <td class="text-center">
@@ -327,12 +258,51 @@
     </div>
 </div>
 
+<!-- Add Medicament Modal -->
+<div class="modal fade" id="addMedicamentModal" tabindex="-1" aria-labelledby="addMedicamentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addMedicamentModalLabel">
+                    <i class="fas fa-pills me-2"></i>
+                    Adaugă medicament nou
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addMedicamentForm" asp-action="Create" method="post">
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label for="medicamentNume" class="form-label">
+                            <i class="fas fa-capsules me-2 text-primary"></i>
+                            Nume medicament
+                        </label>
+                        <input type="text" name="Nume" id="medicamentNume" class="form-control form-control-lg" 
+                               placeholder="Introduceți numele medicamentului..." required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Info:</strong> După adăugare, veți putea asocia pacienți și emite rețete pentru acest medicament.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Anulează
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Salvează medicament
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const searchInput = document.getElementById('searchInput');
             const sortSelect = document.getElementById('sortSelect');
-            const filterStatus = document.getElementById('filterStatus');
             const cardViewBtn = document.getElementById('cardView');
             const tableViewBtn = document.getElementById('tableView');
             const cardContainer = document.getElementById('cardViewContainer');
@@ -361,7 +331,6 @@
             function filterAndSort() {
                 const searchTerm = searchInput.value.toLowerCase();
                 const sortValue = sortSelect.value;
-                const statusFilter = filterStatus.value;
                 const isCardView = cardViewBtn.checked;
                 const elements = isCardView ? cards : rows;
 
@@ -370,16 +339,10 @@
                 // Filter
                 elements.forEach(element => {
                     const name = element.dataset.nume;
-                    const status = element.dataset.status;
                     let isVisible = true;
 
                     // Search filter
                     if (searchTerm && !name.includes(searchTerm)) {
-                        isVisible = false;
-                    }
-
-                    // Status filter
-                    if (statusFilter && status !== statusFilter) {
                         isVisible = false;
                     }
 
@@ -399,8 +362,6 @@
                     const patientsB = parseInt(b.dataset.pacienti);
                     const prescriptionsA = parseInt(a.dataset.retete);
                     const prescriptionsB = parseInt(b.dataset.retete);
-                    const idA = parseInt(a.dataset.id);
-                    const idB = parseInt(b.dataset.id);
 
                     switch (sortValue) {
                         case 'alphabetical-desc':
@@ -410,7 +371,8 @@
                         case 'most-prescriptions':
                             return prescriptionsB - prescriptionsA || nameA.localeCompare(nameB);
                         case 'recent':
-                            return idB - idA;
+                            // For recent, we'll keep the original order (newest first)
+                            return 0;
                         default: // alphabetical
                             return nameA.localeCompare(nameB);
                     }
@@ -447,10 +409,36 @@
             // Event listeners
             searchInput.addEventListener('input', filterAndSort);
             sortSelect.addEventListener('change', filterAndSort);
-            filterStatus.addEventListener('change', filterAndSort);
 
             // Initial load
             filterAndSort();
+
+            // Handle form submission for adding medicament
+            const addForm = document.getElementById('addMedicamentForm');
+            const modal = document.getElementById('addMedicamentModal');
+            
+            addForm.addEventListener('submit', function(e) {
+                const numeInput = document.getElementById('medicamentNume');
+                
+                if (!numeInput.value.trim()) {
+                    e.preventDefault();
+                    numeInput.classList.add('is-invalid');
+                    numeInput.nextElementSibling.textContent = 'Numele medicamentului este obligatoriu.';
+                } else {
+                    numeInput.classList.remove('is-invalid');
+                }
+            });
+
+            // Reset form when modal is closed
+            modal.addEventListener('hidden.bs.modal', function () {
+                addForm.reset();
+                document.getElementById('medicamentNume').classList.remove('is-invalid');
+            });
+
+            // Focus on input when modal opens
+            modal.addEventListener('shown.bs.modal', function () {
+                document.getElementById('medicamentNume').focus();
+            });
         });
     </script>
 }
@@ -514,38 +502,6 @@
             transform: translateY(-8px);
             box-shadow: 0 12px 35px rgba(0,0,0,0.15);
         }
-
-    /* Status badge on card */
-    .status-badge {
-        position: absolute;
-        top: -10px;
-        right: 20px;
-        background: white;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        z-index: 1;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .status-active .status-badge {
-        color: #198754;
-        border: 2px solid #d1f2eb;
-    }
-
-    .status-ready .status-badge {
-        color: #0dcaf0;
-        border: 2px solid #cff4fc;
-    }
-
-    .status-inactive .status-badge {
-        color: #ffc107;
-        border: 2px solid #fff3cd;
-    }
 
     /* Medicine icon */
     .medicine-icon {
@@ -698,6 +654,17 @@
 
     .form-control-lg, .form-select-lg {
         padding: 0.75rem 1rem;
+    }
+
+    /* Modal styling */
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+        border-radius: 12px 12px 0 0;
     }
 
     /* Responsive */

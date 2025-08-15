@@ -33,14 +33,9 @@
                 <i class="fas fa-user me-1"></i> Pacienți
             </div>
             <a asp-controller="Pacient" asp-action="Index"
-               class="nav-link d-flex align-items-center @(curCtrl == "Pacient" && curAct != "Create" ? "active" : "")">
+               class="nav-link d-flex align-items-center @(curCtrl == "Pacient" ? "active" : "")">
                 <i class="fas fa-users me-3"></i>
                 <span>Lista pacienți</span>
-            </a>
-            <a asp-controller="Pacient" asp-action="Create"
-               class="nav-link d-flex align-items-center @(curCtrl == "Pacient" && curAct == "Create" ? "active" : "")">
-                <i class="fas fa-user-plus me-3"></i>
-                <span>Adaugă pacient</span>
             </a>
 
             <!-- Medicamente Section -->
@@ -48,14 +43,9 @@
                 <i class="fas fa-pills me-1"></i> Medicamente
             </div>
             <a asp-controller="Medicament" asp-action="Index"
-               class="nav-link d-flex align-items-center @(curCtrl == "Medicament" && curAct != "Create" ? "active" : "")">
+               class="nav-link d-flex align-items-center @(curCtrl == "Medicament" ? "active" : "")">
                 <i class="fas fa-capsules me-3"></i>
                 <span>Lista medicamente</span>
-            </a>
-            <a asp-controller="Medicament" asp-action="Create"
-               class="nav-link d-flex align-items-center @(curCtrl == "Medicament" && curAct == "Create" ? "active" : "")">
-                <i class="fas fa-plus-square me-3"></i>
-                <span>Adaugă medicament</span>
             </a>
 
             <!-- Rețete Section -->

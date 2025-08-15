@@ -6,338 +6,298 @@
     var today = DateTime.Today;
 }
 
-<div class="container-fluid">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="mb-1">
-                        <i class="fas fa-file-medical me-2 text-primary"></i>
-                        @if (ViewBag.MedicamentNume != null)
-                        {
-                            <span>Rețete pentru <strong class="text-primary">@ViewBag.MedicamentNume</strong></span>
-                        }
-                        else
-                        {
-                            <span>Toate rețetele</span>
-                        }
-                    </h2>
-                    <p class="text-muted mb-0">
-                        <span class="badge bg-primary me-2">@Model.Count() total</span>
-                        <span class="badge bg-success me-2">@Model.Count(r => r.DataUrmatoareiVizite.HasValue) cu vizite programate</span>
-                        <span class="badge bg-info">@Model.Count(r => r.DataUrmatoareiVizite?.Month == DateTime.Now.Month) luna aceasta</span>
-                    </p>
+<!-- Header cu gradient și statistici -->
+<div class="page-header-gradient mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-2 text-white">
+                <i class="fas fa-file-medical me-2"></i>
+                @if (ViewBag.MedicamentNume != null)
+                {
+                    <span>Rețete - <strong>@ViewBag.MedicamentNume</strong></span>
+                }
+                else
+                {
+                    <span>Listă Rețete</span>
+                }
+            </h2>
+            <div class="d-flex gap-3">
+                <div class="stat-card-mini">
+                    <div class="stat-number">@Model.Count()</div>
+                    <div class="stat-label">Total rețete</div>
                 </div>
-                <div>
-                    @if (!string.IsNullOrEmpty(medicamentId))
-                    {
-                        <a asp-controller="Medicament" asp-action="Details" asp-route-id="@medicamentId"
-                           class="btn btn-outline-secondary me-2">
-                            <i class="fas fa-arrow-left me-1"></i> Înapoi
-                        </a>
-                        <a asp-action="Create" asp-route-medId="@medicamentId"
-                           class="btn btn-primary shadow-sm">
-                            <i class="fas fa-plus me-1"></i> Rețetă nouă
-                        </a>
-                    }
+                <div class="stat-card-mini">
+                    <div class="stat-number">@Model.Count(r => r.DataUrmatoareiVizite?.Month == DateTime.Now.Month)</div>
+                    <div class="stat-label">Luna aceasta</div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Enhanced Filters Card -->
-    <div class="card shadow-sm mb-4 border-0">
-        <div class="card-header bg-gradient-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="fas fa-filter me-2"></i>
-                    Filtrare și sortare
-                </h6>
-                <small id="activeFiltersCount"></small>
-            </div>
-        </div>
-        <div class="card-body bg-light">
-            <div class="row g-3">
-                <!-- Text Search -->
-                <div class="col-lg-3">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white">
-                            <i class="fas fa-search text-muted"></i>
-                        </span>
-                        <input type="text" id="searchGeneral" class="form-control border-start-0" 
-                               placeholder="Caută pacient, serie, număr...">
-                    </div>
-                </div>
-                
-                <!-- Date Range -->
-                <div class="col-lg-2">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white">
-                            <i class="fas fa-calendar-alt text-muted"></i>
-                        </span>
-                        <input type="date" id="dateFrom" class="form-control border-start-0">
-                    </div>
-                </div>
-                <div class="col-lg-2">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white">
-                            <i class="fas fa-calendar-check text-muted"></i>
-                        </span>
-                        <input type="date" id="dateTo" class="form-control border-start-0">
-                    </div>
-                </div>
-                
-                <!-- Next Visit Filter -->
-                <div class="col-lg-2">
-                    <select id="filterVizite" class="form-select">
-                        <option value="">Toate vizitele</option>
-                        <option value="cu-vizite">Cu vizite programate</option>
-                        <option value="fara-vizite">Fără vizite</option>
-                        <option value="saptamana">Săptămâna aceasta</option>
-                        <option value="luna">Luna aceasta</option>
-                        <option value="luna-viitoare">Luna viitoare</option>
-                    </select>
-                </div>
-                
-                <!-- Sort -->
-                <div class="col-lg-2">
-                    <select id="sortBy" class="form-select">
-                        <option value="data-desc">📅 Data (recent)</option>
-                        <option value="data-asc">📅 Data (vechi)</option>
-                        <option value="pacient-asc">👤 Pacient (A-Z)</option>
-                        <option value="pacient-desc">👤 Pacient (Z-A)</option>
-                        <option value="vizita-asc">⏰ Vizită (apropiată)</option>
-                        <option value="vizita-desc">⏰ Vizită (îndepărtată)</option>
-                    </select>
-                </div>
-                
-                <!-- Clear button -->
-                <div class="col-lg-1">
-                    <button type="button" id="clearFilters" class="btn btn-outline-danger w-100" title="Șterge filtrele">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Quick Filter Pills -->
-            <div class="row mt-3">
-                <div class="col">
-                    <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-primary quick-filter" data-filter="today">
-                            <i class="fas fa-calendar-day me-1"></i>Astăzi
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-info quick-filter" data-filter="this-week">
-                            <i class="fas fa-calendar-week me-1"></i>Săptămâna aceasta
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-success quick-filter" data-filter="this-month">
-                            <i class="fas fa-calendar-alt me-1"></i>Luna aceasta
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-warning quick-filter" data-filter="next-month">
-                            <i class="fas fa-calendar-plus me-1"></i>Luna viitoare
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary quick-filter" data-filter="no-visits">
-                            <i class="fas fa-calendar-times me-1"></i>Fără vizite
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Results Table with Better Styling -->
-    <div class="row">
-        <div class="col">
-            @if (Model.Any())
-            {
-                <div class="card shadow-sm border-0">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0" id="reteteTabel">
-                                <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                                    <tr>
-                                        <th width="12%" class="text-white border-0">
-                                            <i class="fas fa-calendar me-1"></i>Data
-                                        </th>
-                                        <th width="25%" class="text-white border-0">
-                                            <i class="fas fa-user me-1"></i>Pacient
-                                        </th>
-                                        @if (ViewBag.MedicamentNume == null)
-                                        {
-                                            <th width="15%" class="text-white border-0">
-                                                <i class="fas fa-pills me-1"></i>Medicament
-                                            </th>
-                                        }
-                                        <th width="10%" class="text-white border-0">Serie</th>
-                                        <th width="10%" class="text-white border-0">Nr. rețetă</th>
-                                        <th width="15%" class="text-white border-0">
-                                            <i class="fas fa-clock me-1"></i>Următoarea vizită
-                                        </th>
-                                        <th width="13%" class="text-center text-white border-0">Acțiuni</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var reteta in Model.OrderByDescending(r => r.Data))
-                                    {
-                                        var daysUntilVisit = reteta.DataUrmatoareiVizite.HasValue ? 
-                                            (reteta.DataUrmatoareiVizite.Value - today).Days : (int?)null;
-                                        var rowClass = "";
-                                        if (daysUntilVisit.HasValue)
-                                        {
-                                            if (daysUntilVisit < 0) rowClass = "table-row-expired";
-                                            else if (daysUntilVisit == 0) rowClass = "table-row-today";
-                                            else if (daysUntilVisit <= 7) rowClass = "table-row-soon";
-                                        }
-
-                                        <tr class="reteta-row @rowClass"
-                                            data-pacient="@(reteta.pacient?.Nume?.ToLower() ?? "") @(reteta.pacient?.Prenume?.ToLower() ?? "")"
-                                            data-medicament="@(reteta.medicament?.Nume?.ToLower() ?? "")"
-                                            data-serie="@(reteta.Serie?.ToLower() ?? "")"
-                                            data-nr="@(reteta.NrReteta?.ToLower() ?? "")"
-                                            data-data="@reteta.Data.ToString("yyyy-MM-dd")"
-                                            data-vizita="@(reteta.DataUrmatoareiVizite?.ToString("yyyy-MM-dd") ?? "")"
-                                            data-has-vizita="@(reteta.DataUrmatoareiVizite.HasValue ? "true" : "false")">
-                                            
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="date-badge me-2">
-                                                        <div class="date-day">@reteta.Data.Day.ToString("00")</div>
-                                                        <div class="date-month">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(reteta.Data.Month)</div>
-                                                    </div>
-                                                    <small class="text-muted">@reteta.Data.Year</small>
-                                                </div>
-                                            </td>
-                                            
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="avatar-circle me-2">
-                                                        @if (reteta.pacient != null)
-                                                        {
-                                                            <span>@reteta.pacient.Nume.Substring(0, 1)@reteta.pacient.Prenume.Substring(0, 1)</span>
-                                                        }
-                                                    </div>
-                                                    <div>
-                                                        <strong>@reteta.pacient?.Nume @reteta.pacient?.Prenume</strong>
-                                                        @if (reteta.pacient?.Id != null)
-                                                        {
-                                                            <br>
-                                                            <small class="text-muted">ID: #@reteta.pacient.Id</small>
-                                                        }
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            
-                                            @if (ViewBag.MedicamentNume == null)
-                                            {
-                                                <td>
-                                                    <span class="badge bg-gradient-info text-white">
-                                                        <i class="fas fa-pills me-1"></i>@reteta.medicament?.Nume
-                                                    </span>
-                                                </td>
-                                            }
-                                            
-                                            <td>
-                                                @if (!string.IsNullOrEmpty(reteta.Serie))
-                                                {
-                                                    <code class="text-primary">@reteta.Serie</code>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted">-</span>
-                                                }
-                                            </td>
-                                            
-                                            <td>
-                                                @if (!string.IsNullOrEmpty(reteta.NrReteta))
-                                                {
-                                                    <code class="text-primary">@reteta.NrReteta</code>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted">-</span>
-                                                }
-                                            </td>
-                                            
-                                            <td>
-                                                @if (reteta.DataUrmatoareiVizite.HasValue)
-                                                {
-                                                    <div class="next-visit-badge">
-                                                        <i class="fas fa-calendar-check me-1"></i>
-                                                        <span>@reteta.DataUrmatoareiVizite.Value.ToString("dd.MM.yyyy")</span>
-                                                        @if (daysUntilVisit.HasValue)
-                                                        {
-                                                            if (daysUntilVisit == 0)
-                                                            {
-                                                                <span class="badge bg-warning ms-2">Astăzi</span>
-                                                            }
-                                                            else if (daysUntilVisit > 0 && daysUntilVisit <= 7)
-                                                            {
-                                                                <span class="badge bg-info ms-2">@daysUntilVisit zile</span>
-                                                            }
-                                                            else if (daysUntilVisit < 0)
-                                                            {
-                                                                <span class="badge bg-danger ms-2">Întârziat</span>
-                                                            }
-                                                        }
-                                                    </div>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted fst-italic">
-                                                        <i class="fas fa-calendar-times me-1"></i>Neprogramat
-                                                    </span>
-                                                }
-                                            </td>
-                                            
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <a asp-action="Edit" asp-route-id="@reteta.Id"
-                                                       class="btn btn-outline-warning" title="Editează">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <button type="button" class="btn btn-outline-danger"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#deleteModal_@reteta.Id"
-                                                            title="Șterge">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            }
-            else
-            {
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center py-5">
-                        <i class="fas fa-file-medical fa-4x text-muted mb-3"></i>
-                        <h4 class="text-muted">Nu există rețete</h4>
-                        @if (!string.IsNullOrEmpty(medicamentId))
-                        {
-                            <a asp-action="Create" asp-route-medId="@medicamentId" class="btn btn-primary mt-3">
-                                <i class="fas fa-plus me-1"></i> Adaugă prima rețetă
-                            </a>
-                        }
-                    </div>
-                </div>
-            }
         </div>
     </div>
 </div>
 
+<!-- Enhanced Filters Card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <!-- Text Search -->
+            <div class="col-lg-3">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchGeneral" class="form-control form-control-lg ps-5" 
+                           placeholder="Caută pacient, serie, număr..."
+                           autocomplete="off">
+                </div>
+            </div>
+            
+            <!-- Date Range -->
+            <div class="col-lg-2">
+                <input type="date" id="dateFrom" class="form-control form-control-lg" title="De la data">
+            </div>
+            <div class="col-lg-2">
+                <input type="date" id="dateTo" class="form-control form-control-lg" title="Până la data">
+            </div>
+            
+            <!-- Next Visit Filter -->
+            <div class="col-lg-2">
+                <select id="filterVizite" class="form-select form-select-lg">
+                    <option value="">Toate vizitele</option>
+                    <option value="cu-vizite">Cu vizite programate</option>
+                    <option value="fara-vizite">Fără vizite</option>
+                    <option value="saptamana">Săptămâna aceasta</option>
+                    <option value="luna">Luna aceasta</option>
+                    <option value="luna-viitoare">Luna viitoare</option>
+                </select>
+            </div>
+            
+            <!-- Sort -->
+            <div class="col-lg-2">
+                <select id="sortBy" class="form-select form-select-lg">
+                    <option value="data-desc">Data (recent)</option>
+                    <option value="data-asc">Data (vechi)</option>
+                    <option value="pacient-asc">Pacient (A-Z)</option>
+                    <option value="pacient-desc">Pacient (Z-A)</option>
+                    <option value="vizita-asc">Vizită (apropiată)</option>
+                    <option value="vizita-desc">Vizită (îndepărtată)</option>
+                </select>
+            </div>
+            
+            <!-- Clear button -->
+            <div class="col-lg-1">
+                <button type="button" id="clearFilters" class="btn btn-outline-secondary btn-lg w-100" title="Șterge filtrele">
+                    <i class="fas fa-eraser"></i>
+                </button>
+            </div>
+        </div>
+
+     
+
+        <!-- Quick Filter Pills -->
+        <div class="mt-3 d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary quick-filter" data-filter="today">
+                <i class="fas fa-calendar-day me-1"></i>Astăzi
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info quick-filter" data-filter="this-week">
+                <i class="fas fa-calendar-week me-1"></i>Săptămâna aceasta
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-success quick-filter" data-filter="this-month">
+                <i class="fas fa-calendar-alt me-1"></i>Luna aceasta
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-warning quick-filter" data-filter="next-month">
+                <i class="fas fa-calendar-plus me-1"></i>Luna viitoare
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary quick-filter" data-filter="no-visits">
+                <i class="fas fa-calendar-times me-1"></i>Fără vizite
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Results Table -->
+@if (Model.Any())
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="reteteTabel">
+                    <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <tr>
+                            <th width="12%" class="text-white border-0">
+                                <i class="fas fa-calendar me-1"></i>Data
+                            </th>
+                            <th width="25%" class="text-white border-0">
+                                <i class="fas fa-user me-1"></i>Pacient
+                            </th>
+                            @if (ViewBag.MedicamentNume == null)
+                            {
+                                <th width="15%" class="text-white border-0">
+                                    <i class="fas fa-pills me-1"></i>Medicament
+                                </th>
+                            }
+                            <th width="10%" class="text-white border-0">Serie</th>
+                            <th width="10%" class="text-white border-0">Nr. rețetă</th>
+                            <th width="15%" class="text-white border-0">
+                                <i class="fas fa-clock me-1"></i>Următoarea vizită
+                            </th>
+                            <th width="13%" class="text-center text-white border-0">Acțiuni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var reteta in Model.OrderByDescending(r => r.Data))
+                        {
+                            var daysUntilVisit = reteta.DataUrmatoareiVizite.HasValue ? 
+                                (reteta.DataUrmatoareiVizite.Value - today).Days : (int?)null;
+                            var rowClass = "";
+                            if (daysUntilVisit.HasValue)
+                            {
+                                if (daysUntilVisit < 0) rowClass = "table-row-expired";
+                                else if (daysUntilVisit == 0) rowClass = "table-row-today";
+                                else if (daysUntilVisit <= 7) rowClass = "table-row-soon";
+                            }
+
+                            <tr class="reteta-row @rowClass"
+                                data-pacient="@(reteta.pacient?.Nume?.ToLower() ?? "") @(reteta.pacient?.Prenume?.ToLower() ?? "")"
+                                data-medicament="@(reteta.medicament?.Nume?.ToLower() ?? "")"
+                                data-serie="@(reteta.Serie?.ToLower() ?? "")"
+                                data-nr="@(reteta.NrReteta?.ToLower() ?? "")"
+                                data-data="@reteta.Data.ToString("yyyy-MM-dd")"
+                                data-vizita="@(reteta.DataUrmatoareiVizite?.ToString("yyyy-MM-dd") ?? "")"
+                                data-has-vizita="@(reteta.DataUrmatoareiVizite.HasValue ? "true" : "false")">
+                                
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="date-badge me-2">
+                                            <div class="date-day">@reteta.Data.Day.ToString("00")</div>
+                                            <div class="date-month">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(reteta.Data.Month)</div>
+                                        </div>
+                                        <small class="text-muted">@reteta.Data.Year</small>
+                                    </div>
+                                </td>
+                                
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle me-2">
+                                            @if (reteta.pacient != null)
+                                            {
+                                                <span>@reteta.pacient.Nume.Substring(0, 1)@reteta.pacient.Prenume.Substring(0, 1)</span>
+                                            }
+                                        </div>
+                                        <div>
+                                            <strong>@reteta.pacient?.Nume @reteta.pacient?.Prenume</strong>
+                                            @if (reteta.pacient?.Id != null)
+                                            {
+                                                <br>
+                                                <small class="text-muted">ID: #@reteta.pacient.Id</small>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                @if (ViewBag.MedicamentNume == null)
+                                {
+                                    <td>
+                                        <span class="badge bg-gradient-info text-white">
+                                            <i class="fas fa-pills me-1"></i>@reteta.medicament?.Nume
+                                        </span>
+                                    </td>
+                                }
+                                
+                                <td>
+                                    @if (!string.IsNullOrEmpty(reteta.Serie))
+                                    {
+                                        <code class="text-primary">@reteta.Serie</code>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                
+                                <td>
+                                    @if (!string.IsNullOrEmpty(reteta.NrReteta))
+                                    {
+                                        <code class="text-primary">@reteta.NrReteta</code>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                
+                                <td>
+                                    @if (reteta.DataUrmatoareiVizite.HasValue)
+                                    {
+                                        <div class="next-visit-badge">
+                                            <i class="fas fa-calendar-check me-1"></i>
+                                            <span>@reteta.DataUrmatoareiVizite.Value.ToString("dd.MM.yyyy")</span>
+                                            @if (daysUntilVisit.HasValue)
+                                            {
+                                                if (daysUntilVisit == 0)
+                                                {
+                                                    <span class="badge bg-warning ms-2">Astăzi</span>
+                                                }
+                                                else if (daysUntilVisit > 0 && daysUntilVisit <= 7)
+                                                {
+                                                    <span class="badge bg-info ms-2">@daysUntilVisit zile</span>
+                                                }
+                                                else if (daysUntilVisit < 0)
+                                                {
+                                                    <span class="badge bg-danger ms-2">Întârziat</span>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic">
+                                            <i class="fas fa-calendar-times me-1"></i>Neprogramat
+                                        </span>
+                                    }
+                                </td>
+                                
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a asp-action="Edit" asp-route-id="@reteta.Id"
+                                           class="btn btn-outline-warning" title="Editează">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteModal_@reteta.Id"
+                                                title="Șterge">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <div class="empty-state">
+            <i class="fas fa-file-medical fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">Nu există rețete</h4>
+            @if (!string.IsNullOrEmpty(medicamentId))
+            {
+                <a asp-action="Create" asp-route-medId="@medicamentId" class="btn btn-primary mt-3">
+                    <i class="fas fa-plus me-1"></i> Adaugă prima rețetă
+                </a>
+            }
+        </div>
+    </div>
+}
+
 <!-- No Results Message -->
 <div id="noResultsMessage" class="text-center py-5 d-none">
-    <div class="card border-0 shadow-sm">
-        <div class="card-body py-5">
-            <i class="fas fa-search fa-4x text-muted mb-3"></i>
-            <h4 class="text-muted">Nu au fost găsite rețete</h4>
-            <p class="text-muted">Încearcă să modifici criteriile de filtrare</p>
-        </div>
+    <div class="empty-state">
+        <i class="fas fa-search fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">Nu au fost găsite rețete</h4>
+        <p class="text-muted">Încearcă să modifici criteriile de filtrare</p>
     </div>
 </div>
 
@@ -393,23 +353,7 @@
             const tableBody = document.querySelector('#reteteTabel tbody');
             const noResults = document.getElementById('noResultsMessage');
             const tableContainer = document.querySelector('.table-responsive')?.closest('.card');
-            const activeFiltersCount = document.getElementById('activeFiltersCount');
-
-            function updateActiveFiltersCount() {
-                let count = 0;
-                if (searchGeneral.value) count++;
-                if (dateFrom.value) count++;
-                if (dateTo.value) count++;
-                if (filterVizite.value) count++;
-                if (sortBy.value !== 'data-desc') count++;
-                
-                if (count > 0) {
-                    activeFiltersCount.textContent = `${count} filtre active`;
-                    activeFiltersCount.className = 'badge bg-warning';
-                } else {
-                    activeFiltersCount.textContent = '';
-                }
-            }
+            const statsVisible = document.getElementById('statsVisible');
 
             function filterAndSort() {
                 const searchTerm = searchGeneral.value.toLowerCase();
@@ -515,9 +459,19 @@
                 });
 
                 // Reorder rows in table
-                visibleRows.forEach(row => {
-                    tableBody.appendChild(row);
-                });
+                if (tableBody) {
+                    visibleRows.forEach(row => {
+                        tableBody.appendChild(row);
+                    });
+                }
+
+                // Update visible count
+                if (statsVisible) {
+                    const visibleSpan = statsVisible.querySelector('.fa-eye').nextSibling;
+                    if (visibleSpan) {
+                        visibleSpan.textContent = ` ${visibleRows.length} afișate`;
+                    }
+                }
 
                 // Show/hide no results
                 if (visibleRows.length === 0 && rows.length > 0) {
@@ -527,8 +481,6 @@
                     noResults.classList.add('d-none');
                     if (tableContainer) tableContainer.classList.remove('d-none');
                 }
-
-                updateActiveFiltersCount();
             }
 
             // Quick filters
@@ -593,6 +545,50 @@
 }
 
 <style>
+    /* Page header gradient */
+    .page-header-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 12px;
+        color: white;
+    }
+
+    /* Mini stat cards in header */
+    .stat-card-mini {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+        .stat-card-mini .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .stat-card-mini .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            opacity: 0.9;
+            color: white;
+        }
+
+    /* Search box styling */
+    .search-box {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 1;
+    }
+
     /* Enhanced table styling */
     .table {
         font-size: 0.9rem;
@@ -677,47 +673,56 @@
         font-weight: 500;
     }
 
-    .bg-gradient-info {
-        background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
-    }
-
-    /* Filter card styling */
     .bg-gradient-primary {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
 
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+    }
+
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #198754 0%, #157347 100%);
+    }
+
+    .bg-gradient-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+
+    /* Card styling */
     .card {
         border-radius: 12px;
         overflow: hidden;
     }
 
-    .card-header {
-        border: none;
-        font-weight: 600;
-    }
-
     /* Input styling */
     .form-control, .form-select {
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
-        font-size: 0.9rem;
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
     }
 
-    .form-control:focus, .form-select:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
 
-    .input-group-text {
-        background-color: white;
-        border-right: none;
-    }
-
-    .form-control.border-start-0 {
-        border-left: none;
+    .form-control-lg, .form-select-lg {
+        padding: 0.75rem 1rem;
     }
 
     /* Button styling */
+    .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
     .btn-group-sm .btn {
         padding: 0.375rem 0.75rem;
         font-size: 0.875rem;
@@ -764,6 +769,24 @@
         border-radius: 4px;
     }
 
+    /* Empty state */
+    .empty-state {
+        padding: 3rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+
+    /* Modal styling */
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+        border-radius: 12px 12px 0 0;
+    }
+
     /* Shadow utilities */
     .shadow-sm {
         box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.075) !important;
@@ -771,6 +794,14 @@
 
     /* Responsive adjustments */
     @@media (max-width: 768px) {
+        .page-header-gradient {
+            padding: 1rem;
+        }
+
+        .stat-card-mini {
+            padding: 0.5rem 1rem;
+        }
+
         .table {
             font-size: 0.8rem;
         }
@@ -780,4 +811,3 @@
             font-size: 0.75rem;
         }
     }
-</style>
