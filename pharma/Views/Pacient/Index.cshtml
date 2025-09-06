@@ -5,7 +5,7 @@
     
     // Pagination parameters
     var currentPage = int.TryParse(Context.Request.Query["page"], out var p) ? p : 1;
-    var pageSize = 2;
+    var pageSize = 20;
     var totalItems = Model.Count();
     var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
     var pagedItems = Model.OrderBy(p => p.Nume).ThenBy(p => p.Prenume).Skip((currentPage - 1) * pageSize).Take(pageSize);

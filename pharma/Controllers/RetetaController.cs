@@ -15,7 +15,7 @@ namespace pharma.Controllers
         }
 
         public IActionResult Index(int? medId, string? search, DateTime? dateFrom, DateTime? dateTo,
-                          string? visitFilter, string sortBy = "data-desc", int page = 1, int pageSize = 50)
+                          string? visitFilter, string sortBy = "data-desc", int page = 1, int pageSize = 20)
         {
             var retete = _pharmaContext.Retete
                 .Include(r => r.pacient)
