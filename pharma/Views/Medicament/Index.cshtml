@@ -39,25 +39,11 @@
             </div>
             <div class="col-md-3">
                 <select id="sortSelect" class="form-select form-select-lg">
-                    <option value="alphabetical">📝 Alfabetic (A-Z)</option>
-                    <option value="alphabetical-desc">📝 Alfabetic (Z-A)</option>
-                    <option value="most-patients">👥 Cei mai mulți pacienți</option>
-                    <option value="most-prescriptions">📋 Cele mai multe rețete</option>
-                    <option value="recent">🆕 Adăugate recent</option>
+                    <option value="alphabetical">Alfabetic (A-Z)</option>
+                    <option value="alphabetical-desc">Alfabetic (Z-A)</option>
+                    <option value="most-patients">Cei mai mulți pacienți</option>
+                    <option value="most-prescriptions">Cele mai multe rețete</option>
                 </select>
-            </div>
-            <div class="col-md-3">
-                <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="viewMode" id="cardView" value="card" checked>
-                    <label class="btn btn-outline-primary" for="cardView">
-                        <i class="fas fa-th-large"></i> Carduri
-                    </label>
-
-                    <input type="radio" class="btn-check" name="viewMode" id="tableView" value="table">
-                    <label class="btn btn-outline-primary" for="tableView">
-                        <i class="fas fa-list"></i> Tabel
-                    </label>
-                </div>
             </div>
         </div>
     </div>
@@ -71,7 +57,7 @@
             var numarPacienti = med.PacientMedicamente?.Count ?? 0;
             var numarRetete = med.Retete?.Count ?? 0;
 
-            <div class="col-xl-3 col-lg-4 col-md-6 medicament-card"
+            <div class="col-6 col-md-3 col-lg-3 col-xl-5th medicament-card"
                  data-nume="@med.Nume.ToLower()"
                  data-pacienti="@numarPacienti"
                  data-retete="@numarRetete">
@@ -140,80 +126,6 @@
     </div>
 </div>
 
-<!-- Table View -->
-<div id="tableViewContainer" class="d-none">
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <tr>
-                            <th class="text-white border-0">Medicament</th>
-                            <th class="text-white border-0 text-center">Pacienți</th>
-                            <th class="text-white border-0 text-center">Rețete</th>
-                            <th class="text-white border-0 text-center">Acțiuni</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var med in Model)
-                        {
-                            var numarPacienti = med.PacientMedicamente?.Count ?? 0;
-                            var numarRetete = med.Retete?.Count ?? 0;
-
-                            <tr class="medicament-row"
-                                data-nume="@med.Nume.ToLower()"
-                                data-pacienti="@numarPacienti"
-                                data-retete="@numarRetete">
-
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="medicine-icon-small me-3">
-                                            <i class="fas fa-pills"></i>
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0">@med.Nume</h6>
-                                        </div>
-                                    </div>
-                                </td>
-
-                                <td class="text-center">
-                                    <span class="badge bg-primary rounded-pill px-3">@numarPacienti</span>
-                                </td>
-
-                                <td class="text-center">
-                                    <span class="badge bg-success rounded-pill px-3">@numarRetete</span>
-                                </td>
-
-                                <td class="text-center">
-                                    <div class="d-flex justify-content-center gap-1 position-relative">
-                                        <a asp-action="Details" asp-route-id="@med.Id"
-                                           class="btn btn-outline-primary btn-sm" title="Detalii">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-
-                                        <!-- Dropdown pentru opțiuni -->
-                                        <div class="dropdown">
-                                            <button class="btn btn-outline-secondary btn-sm border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                <li>
-                                                    <a class="dropdown-item" asp-action="Edit" asp-route-id="@med.Id">
-                                                        <i class="fas fa-edit me-2"></i> Editează
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- No Results -->
 <div id="noResults" class="text-center py-5 d-none">
@@ -336,9 +248,6 @@
                             return patientsB - patientsA || nameA.localeCompare(nameB);
                         case 'most-prescriptions':
                             return prescriptionsB - prescriptionsA || nameA.localeCompare(nameB);
-                        case 'recent':
-                            // For recent, we'll keep the original order (newest first)
-                            return 0;
                         default: // alphabetical
                             return nameA.localeCompare(nameB);
                     }
@@ -657,10 +566,15 @@
     }
 
     /* Responsive */
-    @@media (max-width: 768px) {
+    @@media (max-width: 1200px) {
         .medicine-card .stats-container {
             flex-direction: column;
             gap: 1rem;
+        }
+
+        .col-xl-5th {
+            flex: 0 0 20%;
+            max-width: 20%;
         }
 
         .stat-item {

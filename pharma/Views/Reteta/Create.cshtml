@@ -5,9 +5,19 @@
 }
 
 <div class="container">
+    <!-- Afișare erori globale -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
     <div class="row">
         <div class="col-md-8 mx-auto">
-            <div class="card">
+            <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
                         <i class="fas fa-file-medical me-2"></i>
@@ -15,22 +25,33 @@
                     </h4>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Create" method="post">
+                    <form asp-action="Create" method="post" novalidate>
+                        @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="MedicamentId" />
                         <input type="hidden" asp-for="MedicamentNume" />
 
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="Data" class="form-label">Data rețetei</label>
-                                    <input asp-for="Data" type="date" class="form-control" />
+                                    <label asp-for="Data" class="form-label">
+                                        Data rețetei <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Data"
+                                           type="date"
+                                           class="form-control"
+                                           max="@DateTime.Now.ToString("yyyy-MM-dd")"
+                                           min="2000-01-01"
+                                           required />
+                                    <div class="form-text">Format: ZZ.LL.AAAA</div>
                                     <span asp-validation-for="Data" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="PacientId" class="form-label">Pacient</label>
-                                    <select asp-for="PacientId" class="form-select">
+                                    <label asp-for="PacientId" class="form-label">
+                                        Pacient <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="PacientId" class="form-select" required>
                                         <option value="">-- Selectează pacientul --</option>
                                         @foreach (var pacient in Model.PacientiDisponibili)
                                         {
@@ -46,28 +67,46 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="Serie" class="form-label">Serie</label>
-                                    <input asp-for="Serie" class="form-control" placeholder="Ex: A123" />
+                                    <input asp-for="Serie"
+                                           class="form-control"
+                                           placeholder="Ex: A123"
+                                           maxlength="50" />
                                     <span asp-validation-for="Serie" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="NrReteta" class="form-label">Numărul rețetei</label>
-                                    <input asp-for="NrReteta" class="form-control" placeholder="Ex: 001234" />
+                                    <input asp-for="NrReteta"
+                                           class="form-control"
+                                           placeholder="Ex: 001234"
+                                           maxlength="50" />
                                     <span asp-validation-for="NrReteta" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="DataUrmatoareiVizite" class="form-label">Data următoarei vizite (opțional)</label>
-                            <input asp-for="DataUrmatoareiVizite" type="date" class="form-control" />
+                            <label asp-for="DataUrmatoareiVizite" class="form-label">
+                                Data următoarei vizite (opțional)
+                            </label>
+                            <input asp-for="DataUrmatoareiVizite"
+                                   type="date"
+                                   class="form-control"
+                                   min="@DateTime.Now.ToString("yyyy-MM-dd")"
+                                   max="@DateTime.Now.AddYears(5).ToString("yyyy-MM-dd")" />
+                            <div class="form-text">Data trebuie să fie în viitor</div>
                             <span asp-validation-for="DataUrmatoareiVizite" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="Observatii" class="form-label">Observații</label>
-                            <textarea asp-for="Observatii" class="form-control" rows="3" placeholder="Instrucțiuni speciale, doze, etc..."></textarea>
+                            <textarea asp-for="Observatii"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Instrucțiuni speciale, doze, etc..."
+                                      maxlength="1000"></textarea>
+                            <div class="form-text">Maximum 1000 caractere</div>
                             <span asp-validation-for="Observatii" class="text-danger"></span>
                         </div>
 
@@ -88,15 +127,114 @@
             {
                 <div class="alert alert-warning mt-3">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    Nu există pacienți asociați cu acest medicament.
+                    <strong>Atenție!</strong> Nu există pacienți asociați cu acest medicament.
                     <a asp-controller="Pacient" asp-action="Create" class="alert-link">Adaugă un pacient nou</a>
                     și asociază-l cu medicamentul @Model.MedicamentNume.
                 </div>
             }
+
+            <!-- Informații ajutătoare -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle me-1"></i> Informații importante
+                    </h6>
+                    <ul class="mb-0 small text-muted">
+                        <li>Toate câmpurile marcate cu <span class="text-danger">*</span> sunt obligatorii</li>
+                        <li>Data rețetei nu poate fi în viitor</li>
+                        <li>Data următoarei vizite trebuie să fie în viitor</li>
+                        <li>Seria și numărul rețetei sunt opționale, dar recomandate pentru evidență</li>
+                        <li>Puteți adăuga observații pentru instrucțiuni speciale</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Setare dată curentă ca default
+            const dataInput = document.querySelector('input[name="Data"]');
+            if (dataInput && !dataInput.value) {
+                const today = new Date();
+                dataInput.value = today.toISOString().split('T')[0];
+            }
+
+            // Validare client-side îmbunătățită
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function (e) {
+                let isValid = true;
+
+                // Validare pacient selectat
+                const pacientSelect = document.querySelector('select[name="PacientId"]');
+                if (!pacientSelect.value || pacientSelect.value === '') {
+                    isValid = false;
+                    showFieldError(pacientSelect, 'Vă rugăm să selectați un pacient!');
+                }
+
+                // Validare dată rețetă
+                const dataRetetaInput = document.querySelector('input[name="Data"]');
+                if (dataRetetaInput.value) {
+                    const dataReteta = new Date(dataRetetaInput.value);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    if (dataReteta > today) {
+                        isValid = false;
+                        showFieldError(dataRetetaInput, 'Data rețetei nu poate fi în viitor!');
+                    }
+                }
+
+                // Validare dată următoarea vizită
+                const dataVizitaInput = document.querySelector('input[name="DataUrmatoareiVizite"]');
+                if (dataVizitaInput.value) {
+                    const dataVizita = new Date(dataVizitaInput.value);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    if (dataVizita <= today) {
+                        isValid = false;
+                        showFieldError(dataVizitaInput, 'Data următoarei vizite trebuie să fie în viitor!');
+                    }
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                }
+            });
+
+            // Funcție pentru afișarea erorilor
+            function showFieldError(field, message) {
+                // Eliminăm erorile existente
+                const existingError = field.parentNode.querySelector('.field-validation-error');
+                if (existingError) {
+                    existingError.remove();
+                }
+
+                // Adăugăm clasa de eroare
+                field.classList.add('is-invalid');
+
+                // Creăm și adăugăm mesajul de eroare
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'text-danger field-validation-error';
+                errorDiv.textContent = message;
+                field.parentNode.appendChild(errorDiv);
+            }
+
+            // Eliminare erori la schimbarea valorilor
+            document.querySelectorAll('input, select, textarea').forEach(field => {
+                field.addEventListener('input', function () {
+                    this.classList.remove('is-invalid');
+                    const error = this.parentNode.querySelector('.field-validation-error');
+                    if (error) {
+                        error.remove();
+                    }
+                });
+            });
+        });
+    </script>
 }

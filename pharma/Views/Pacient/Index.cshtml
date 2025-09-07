@@ -2,13 +2,13 @@
 
 @{
     ViewData["Title"] = "Lista pacienți";
-    
-    // Pagination parameters
-    var currentPage = int.TryParse(Context.Request.Query["page"], out var p) ? p : 1;
-    var pageSize = 20;
-    var totalItems = Model.Count();
-    var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-    var pagedItems = Model.OrderBy(p => p.Nume).ThenBy(p => p.Prenume).Skip((currentPage - 1) * pageSize).Take(pageSize);
+
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var totalItems = ViewBag.TotalItems ?? 0;
+    var pageSize = ViewBag.PageSize ?? 20;
+
+    var pagedItems = Model; // deja paginat din controller
 }
 
 <!-- Header cu gradient și statistici -->
@@ -49,7 +49,7 @@
             </div>
             <div class="col-md-3">
                 <select id="filterMedicament" class="form-select form-select-lg">
-                    <option value="">🏥 Toate medicamentele</option>
+                    <option value="">Toate medicamentele</option>
                     @{
                         var allMedicaments = Model.SelectMany(p => p.PacientMedicamente.Select(pm => pm.Medicament))
                         .Distinct()
@@ -63,18 +63,18 @@
             </div>
             <div class="col-md-2">
                 <select id="filterRetete" class="form-select form-select-lg">
-                    <option value="">📋 Toți pacienții</option>
-                    <option value="cu-retete">✅ Cu rețete</option>
-                    <option value="fara-retete">⚠️ Fără rețete</option>
+                    <option value="">Toți pacienții</option>
+                    <option value="cu-retete">Cu rețete</option>
+                    <option value="fara-retete">⚠Fără rețete</option>
                 </select>
             </div>
             <div class="col-md-2">
                 <select id="sortBy" class="form-select form-select-lg">
-                    <option value="nume-asc">📝 Nume (A-Z)</option>
-                    <option value="nume-desc">📝 Nume (Z-A)</option>
-                    <option value="retete-desc">📋 Cele mai multe rețete</option>
-                    <option value="retete-asc">📋 Cele mai puține rețete</option>
-                    <option value="recent">🆕 Adăugați recent</option>
+                    <option value="nume-asc">Nume (A-Z)</option>
+                    <option value="nume-desc">Nume (Z-A)</option>
+                    <option value="retete-desc">Cele mai multe rețete</option>
+                    <option value="retete-asc">Cele mai puține rețete</option>
+                    <option value="recent">Adăugați recent</option>
                 </select>
             </div>
             <div class="col-md-1">
@@ -84,25 +84,7 @@
             </div>
         </div>
 
-        <!-- Quick Stats Pills -->
-        <div class="mt-3 d-flex flex-wrap gap-2">
-            <span class="badge rounded-pill bg-gradient-primary px-3 py-2">
-                <i class="fas fa-check-circle me-1"></i>
-                @Model.Count(p => p.Retete.Any()) cu rețete active
-            </span>
-            <span class="badge rounded-pill bg-gradient-info px-3 py-2">
-                <i class="fas fa-pills me-1"></i>
-                @Model.Count(p => p.PacientMedicamente.Any()) cu medicamente
-            </span>
-            <span class="badge rounded-pill bg-gradient-success px-3 py-2">
-                <i class="fas fa-calendar-check me-1"></i>
-                @Model.Count(p => p.Retete.Any(r => r.DataUrmatoareiVizite.HasValue && r.DataUrmatoareiVizite > DateTime.Now)) cu vizite programate
-            </span>
-            <span class="badge rounded-pill bg-gradient-secondary px-3 py-2" id="statsVisible">
-                <i class="fas fa-eye me-1"></i>
-                Afișând @pagedItems.Count() din @totalItems
-            </span>
-        </div>
+      
     </div>
 </div>
 
@@ -118,7 +100,6 @@
                         <th class="text-white border-0" width="15%">Contact</th>
                         <th class="text-white border-0" width="20%">Medicamente</th>
                         <th class="text-white border-0 text-center" width="10%">Rețete</th>
-                        <th class="text-white border-0" width="15%">Următoarea vizită</th>
                         <th class="text-white border-0 text-center" width="10%">Acțiuni</th>
                     </tr>
                 </thead>
@@ -138,7 +119,6 @@
                             data-telefon="@(pacient.NrTelefon ?? "")"
                             data-medicamente="@string.Join(",", pacient.PacientMedicamente.Select(pm => pm.MedicamentId))"
                             data-retete-count="@pacient.Retete.Count"
-                            data-next-visit="@(urmatoareaVizita?.DataUrmatoareiVizite?.ToString("yyyy-MM-dd") ?? "")"
                             data-has-retete="@(pacient.Retete.Any() ? "true" : "false")">
 
                             <!-- Avatar -->
@@ -204,22 +184,7 @@
                                 </span>
                             </td>
 
-                            <!-- Următoarea vizită -->
-                            <td>
-                                @if (urmatoareaVizita != null)
-                                {
-                                    var vizitaData = urmatoareaVizita.DataUrmatoareiVizite.Value;
-                                    var classCuloare = vizitaData <= DateTime.Now.AddDays(3) ? "text-warning" : "text-info";
-                                    <span class="@classCuloare">
-                                        <i class="fas fa-calendar-alt me-1"></i>
-                                        @vizitaData.ToString("dd.MM.yyyy")
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">-</span>
-                                }
-                            </td>
+                         
 
                             <!-- Acțiuni -->
                             <td class="text-center">

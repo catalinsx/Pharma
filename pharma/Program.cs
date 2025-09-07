@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using pharma.Data;
 
@@ -11,6 +12,11 @@ namespace pharma
 
             builder.Services.AddDbContext<PharmaContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            builder.Services.Configure<RequestLocalizationOptions>(options =>
+            {
+                options.DefaultRequestCulture = new RequestCulture("ro-RO");
+            });
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();

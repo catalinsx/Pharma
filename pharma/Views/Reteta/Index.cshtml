@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = ViewBag.MedicamentNume != null ? $"Rețete - {ViewBag.MedicamentNume}" : "Toate rețetele";
-    var medicamentId = ViewContext.HttpContext.Request.Query["medId"].FirstOrDefault();
+    var medicamentId = ViewBag.MedId;
     var today = DateTime.Today;
 
     // Pagination parameters from ViewBag
@@ -42,7 +42,7 @@
                     <div class="stat-label">Total rețete</div>
                 </div>
                 <div class="stat-card-mini">
-                    <div class="stat-number">@Model.Count(r => r.DataUrmatoareiVizite?.Month == DateTime.Now.Month)</div>
+                    <div class="stat-number">@ViewBag.TotalItems</div>
                     <div class="stat-label">Luna aceasta</div>
                 </div>
                 <div class="stat-card-mini">
@@ -60,6 +60,7 @@
         <form method="get" asp-action="Index" id="filterForm">
             <input type="hidden" name="medId" value="@medicamentId" />
             <input type="hidden" name="page" value="1" />
+            <input type="hidden" name="pageSize" value="@pageSize" />
             
             <div class="row g-3">
                 <!-- Text Search -->
@@ -208,11 +209,7 @@
                                         </div>
                                         <div>
                                             <strong>@reteta.pacient?.Nume @reteta.pacient?.Prenume</strong>
-                                            @if (reteta.pacient?.Id != null)
-                                            {
-                                                <br>
-                                                <small class="text-muted">ID: #@reteta.pacient.Id</small>
-                                            }
+                                            
                                         </div>
                                     </div>
                                 </td>
@@ -266,7 +263,7 @@
                                                 }
                                                 else if (daysUntilVisit < 0)
                                                 {
-                                                    <span class="badge bg-danger ms-2">Întârziat</span>
+                                                    <span class="badge bg-danger ms-2">Întârziat/Preluat</span>
                                                 }
                                             }
                                         </div>

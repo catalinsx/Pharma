@@ -130,10 +130,6 @@
                             <a asp-action="Index" class="btn btn-secondary me-2">
                                 <i class="fas fa-times me-1"></i> Anulează
                             </a>
-                            <button type="button" class="btn btn-outline-info"
-                                    onclick="showPatientDetails(@Model.Id)">
-                                <i class="fas fa-eye me-1"></i> Vezi detalii
-                            </button>
                         </div>
                         <div>
                             <button type="button" class="btn btn-outline-danger me-2"
@@ -229,30 +225,7 @@
     </div>
 </div>
 
-<!-- Modal pentru detalii pacient -->
-<div class="modal fade" id="patientDetailsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-user me-2"></i>
-                    Detalii pacient
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="patientDetailsContent">
-                <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Se încarcă...</span>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Închide</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

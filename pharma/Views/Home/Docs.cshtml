@@ -1,0 +1,663 @@
+﻿<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghid de utilizare - Aplicația Farmacie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            --info-gradient: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+
+        .hero-section {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 3rem 0;
+            border-radius: 0 0 2rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @@keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-20px, -20px) rotate(180deg); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .workflow-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+            border-left: 5px solid transparent;
+        }
+
+        .workflow-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .workflow-card.step-1 { border-left-color: #28a745; }
+        .workflow-card.step-2 { border-left-color: #17a2b8; }
+        .workflow-card.step-3 { border-left-color: #ffc107; }
+        .workflow-card.step-4 { border-left-color: #dc3545; }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .step-1 .step-number { background: var(--success-gradient); }
+        .step-2 .step-number { background: var(--info-gradient); }
+        .step-3 .step-number { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); }
+        .step-4 .step-number { background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%); }
+
+        .scenario-card {
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .scenario-card:hover {
+            transform: translateX(10px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+        }
+
+        .scenario-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+
+        .tips-section {
+            background: linear-gradient(145deg, #e8f5e8, #f0f8f0);
+            border-radius: 20px;
+            padding: 2rem;
+            border-left: 6px solid #28a745;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tip-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #28a745;
+            transition: all 0.3s ease;
+        }
+
+        .tip-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.2);
+        }
+
+        .quick-ref-card {
+            background: white;
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .quick-ref-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .quick-ref-header {
+            padding: 1.5rem;
+            color: white;
+            font-weight: 600;
+        }
+
+        .badge-custom {
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .search-highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .icon-lg {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .scenario-details {
+            border-top: 2px solid #e9ecef;
+            margin-top: 1rem;
+            padding-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <div class="hero-content text-center">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-prescription-bottle-medical me-3"></i>
+                    Ghid rapid pentru farmaciste
+                </h1>
+                <p class="lead mb-4">
+                    Învață să folosești aplicația în 5 minute - de la primul pacient la managementul rețetelor
+                </p>
+                <div class="row justify-content-center">
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center bg-white bg-opacity-20 rounded-pill px-3 py-2">
+                            <i class="fas fa-clock me-2"></i>
+                            <span>Timp de citire: ~5 minute</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center bg-white bg-opacity-20 rounded-pill px-3 py-2">
+                            <i class="fas fa-users me-2"></i>
+                            <span>Pentru toate nivelurile</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        
+        <!-- Workflow Principal -->
+        <section class="mb-5">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="fas fa-route me-2"></i>
+                    Cum funcționează în practică
+                </h2>
+                <p class="text-muted">Pașii de bază pe care îi vei urma zilnic</p>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6 mb-3">
+                    <div class="workflow-card step-1">
+                        <div class="d-flex align-items-start">
+                            <div class="step-number">1</div>
+                            <div>
+                                <h5 class="fw-bold mb-2">Vine un pacient nou</h5>
+                                <p class="mb-3">Primul pas e să îl adaugi în sistem cu datele de bază</p>
+                                <div class="small text-muted">
+                                    <i class="fas fa-arrow-right me-1"></i> 
+                                    Pacienți → "Pacient nou" → Nume, CNP, telefon → Selectezi medicamentele → Salvezi
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-3">
+                    <div class="workflow-card step-2">
+                        <div class="d-flex align-items-start">
+                            <div class="step-number">2</div>
+                            <div>
+                                <h5 class="fw-bold mb-2">Pacient existent revine</h5>
+                                <p class="mb-3">Îl cauți rapid și îi creezi o rețetă nouă</p>
+                                <div class="small text-muted">
+                                    <i class="fas fa-arrow-right me-1"></i> 
+                                    Cauți după CNP/nume → "Vezi detalii" → "Editează" → Adaugi rețeta
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-3">
+                    <div class="workflow-card step-3">
+                        <div class="d-flex align-items-start">
+                            <div class="step-number">3</div>
+                            <div>
+                                <h5 class="fw-bold mb-2">Completezi rețeta</h5>
+                                <p class="mb-3">Adaugi seria, numărul și data următoarei vizite</p>
+                                <div class="small text-muted">
+                                    <i class="fas fa-arrow-right me-1"></i> 
+                                    Serie + Nr. rețetă → Data de azi (automat) → Data următoarei vizite
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-3">
+                    <div class="workflow-card step-4">
+                        <div class="d-flex align-items-start">
+                            <div class="step-number">4</div>
+                            <div>
+                                <h5 class="fw-bold mb-2">Urmărești vizitele</h5>
+                                <p class="mb-3">Aplicația îți arată cine vine astăzi/mâine</p>
+                                <div class="small text-muted">
+                                    <i class="fas fa-arrow-right me-1"></i> 
+                                    Badge-urile colorate îți spun: roșu=întârziat, galben=azi, albastru=în curând
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scenarii Practice -->
+        <section class="mb-5">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Situații practice comune
+                </h2>
+                <p class="text-muted">Cum să gestionezi situațiile de zi cu zi</p>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="scenario-card" onclick="toggleScenario(this)">
+                        <div class="d-flex align-items-center">
+                            <div class="scenario-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Pacient nou cu prima rețetă</h6>
+                                <p class="text-muted small mb-0">Vine cineva pentru prima dată cu o rețetă</p>
+                            </div>
+                        </div>
+                        <div class="scenario-details mt-3" style="display: none;">
+                            <div class="alert alert-light border-start border-success">
+                                <h6 class="fw-bold text-success">Pașii rapizi:</h6>
+                                <ol class="small mb-0">
+                                    <li>Click pe "Pacient nou" din meniul principal</li>
+                                    <li>Completezi: numele, CNP-ul, telefonul</li>
+                                    <li>În secțiunea medicamentelor, adaugi toate medicamentele de pe rețetă</li>
+                                    <li>Completezi seria și numărul rețetei</li>
+                                    <li>Setezi data următoarei vizite (de obicei la 30 zile)</li>
+                                    <li>Salvezi → Gata!</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="scenario-card" onclick="toggleScenario(this)">
+                        <div class="d-flex align-items-center">
+                            <div class="scenario-icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Căutarea rapidă</h6>
+                                <p class="text-muted small mb-0">Cum să găsești rapid un pacient</p>
+                            </div>
+                        </div>
+                        <div class="scenario-details mt-3" style="display: none;">
+                            <div class="alert alert-light border-start border-info">
+                                <h6 class="fw-bold text-info">Metode de căutare:</h6>
+                                <ul class="small mb-0">
+                                    <li><strong>După CNP:</strong> Introduci CNP-ul complet sau primele cifre</li>
+                                    <li><strong>După nume:</strong> Scrii numele sau prenumele</li>
+                                    <li><strong>După telefon:</strong> Ultimele 4-6 cifre din număr</li>
+                                    <li><strong>Combinat:</strong> De ex. "Ion 1234" - caută Ion cu CNP care conține 1234</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="scenario-card" onclick="toggleScenario(this)">
+                        <div class="d-flex align-items-center">
+                            <div class="scenario-icon">
+                                <i class="fas fa-pills"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Adăugarea de medicamente</h6>
+                                <p class="text-muted small mb-0">Când se schimbă tratamentul</p>
+                            </div>
+                        </div>
+                        <div class="scenario-details mt-3" style="display: none;">
+                            <div class="alert alert-light border-start border-warning">
+                                <h6 class="fw-bold text-warning">Pentru medicament nou:</h6>
+                                <ol class="small mb-2">
+                                    <li>Găsești pacientul și click pe "Editează"</li>
+                                    <li>La medicamentele existente, click pe "+"</li>
+                                    <li>Scrii numele medicamentului și selectezi din listă</li>
+                                    <li>Salvezi schimbările</li>
+                                </ol>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Dacă nu găsești medicamentul în listă, îl poți scrie manual
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="scenario-card" onclick="toggleScenario(this)">
+                        <div class="d-flex align-items-center">
+                            <div class="scenario-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Programarea următoarei vizite</h6>
+                                <p class="text-muted small mb-0">Cum să setezi corect datele</p>
+                            </div>
+                        </div>
+                        <div class="scenario-details mt-3" style="display: none;">
+                            <div class="alert alert-light border-start border-danger">
+                                <h6 class="fw-bold text-danger">Reguli importante:</h6>
+                                <ul class="small mb-0">
+                                    <li><strong>Tratament cronic:</strong> La 28-30 zile de obicei</li>
+                                    <li><strong>Tratament scurt:</strong> Setezi data când se termină medicația</li>
+                                    <li><strong>Control medical:</strong> Întrebi pacientul când are următorul control</li>
+                                    <li><strong>Weekend/sărbători:</strong> Aplicația îți va sugera o dată validă</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Referinta Rapida -->
+        <section class="mb-5">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="fas fa-bookmark me-2"></i>
+                    Referință rapidă
+                </h2>
+                <p class="text-muted">Informațiile cele mai importante într-un loc</p>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-4 mb-3">
+                    <div class="quick-ref-card">
+                        <div class="quick-ref-header" style="background: var(--success-gradient);">
+                            <i class="fas fa-palette me-2"></i>
+                            Badge-urile colorate
+                        </div>
+                        <div class="p-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-danger me-2">Întârziat</span>
+                                <small>Trebuia să vină ieri sau mai demult</small>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning text-dark me-2">Astăzi</span>
+                                <small>Programat pentru ziua curentă</small>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-info me-2">În curând</span>
+                                <small>În următoarele 3-7 zile</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-secondary me-2">Normal</span>
+                                <small>Mai mult de o săptămână</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mb-3">
+                    <div class="quick-ref-card">
+                        <div class="quick-ref-header" style="background: var(--info-gradient);">
+                            <i class="fas fa-keyboard me-2"></i>
+                            Scurtături utile
+                        </div>
+                        <div class="p-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="small fw-bold">Căutare rapidă:</span>
+                                <span class="small">Ctrl + F</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="small fw-bold">Pacient nou:</span>
+                                <span class="small">Ctrl + N</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="small fw-bold">Salvare:</span>
+                                <span class="small">Ctrl + S</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="small fw-bold">Undo/Înapoi:</span>
+                                <span class="small">Ctrl + Z</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mb-3">
+                    <div class="quick-ref-card">
+                        <div class="quick-ref-header" style="background: var(--primary-gradient);">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Atenție la...
+                        </div>
+                        <div class="p-3">
+                            <div class="small mb-2">
+                                <i class="fas fa-check text-success me-1"></i>
+                                CNP-ul să fie corect (13 cifre)
+                            </div>
+                            <div class="small mb-2">
+                                <i class="fas fa-check text-success me-1"></i>
+                                Seria și nr. rețetei să fie complete
+                            </div>
+                            <div class="small mb-2">
+                                <i class="fas fa-check text-success me-1"></i>
+                                Data următoarei vizite să fie realistă
+                            </div>
+                            <div class="small">
+                                <i class="fas fa-check text-success me-1"></i>
+                                Verifică dacă pacientul mai ia toate medicamentele
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sfaturi si Trucuri -->
+        <section class="tips-section">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold text-success">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Sfaturi pentru eficiență maximă
+                </h2>
+                <p class="text-muted">Trucuri care îți vor face munca mai ușoară</p>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="tip-card">
+                        <h6 class="fw-bold text-success mb-2">
+                            <i class="fas fa-clock me-2"></i>Organizează-ți ziua
+                        </h6>
+                        <p class="small mb-0">
+                            Dimineața, verifică rapid lista pacienților care vin astăzi. 
+                            Așa știi de câte rețete ai nevoie și te poți pregăti din timp.
+                        </p>
+                    </div>
+
+                    <div class="tip-card">
+                        <h6 class="fw-bold text-success mb-2">
+                            <i class="fas fa-mobile-alt me-2"></i>Folosește telefonul
+                        </h6>
+                        <p class="small mb-0">
+                            Aplicația funcționează perfect și pe telefon. Când ești în depozit 
+                            sau ocupată, poți căuta rapid un pacient de pe mobil.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="tip-card">
+                        <h6 class="fw-bold text-success mb-2">
+                            <i class="fas fa-users me-2"></i>Întreabă pacientul
+                        </h6>
+                        <p class="small mb-0">
+                            Când nu ești sigură de ceva (dosaj, frecvență), întreabă direct pacientul. 
+                            De obicei știu foarte bine tratamentul lor.
+                        </p>
+                    </div>
+
+                    <div class="tip-card">
+                        <h6 class="fw-bold text-success mb-2">
+                            <i class="fas fa-sync-alt me-2"></i>Verifică periodic
+                        </h6>
+                        <p class="small mb-0">
+                            O dată pe săptămână, verifică pacienții "întârziați" (badge roșu). 
+                            Poate au venit și nu ai actualizat, sau s-au mutat la altă farmacie.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="alert alert-success border-0" style="background: rgba(40, 167, 69, 0.1);">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-star fa-2x text-success me-3"></i>
+                            <div>
+                                <h5 class="fw-bold text-success mb-1">Trucul expert:</h5>
+                                <p class="mb-0">
+                                    Când un pacient îți spune că "doctorul a schimbat tratamentul", întreabă-l să îți arate 
+                                    rețeta nouă înainte să modifici ceva în aplicație. Așa eviți greșelile și confuziile.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center py-4 mt-5">
+            <div class="bg-light rounded-3 p-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="fas fa-question-circle me-2 text-primary"></i>
+                    Ai întrebări sau probleme?
+                </h5>
+                <p class="text-muted mb-3">
+                    Nu ezita să întrebi colegii sau să contactezi echipa de suport tehnic.
+                </p>
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <span class="badge badge-custom" style="background: var(--info-gradient);">
+                        <i class="fas fa-phone me-1"></i>
+                        Suport: 0123-456-789
+                    </span>
+                    <span class="badge badge-custom" style="background: var(--success-gradient);">
+                        <i class="fas fa-envelope me-1"></i>
+                        help@farmacie-app.ro
+                    </span>
+                    <span class="badge badge-custom" style="background: var(--primary-gradient);">
+                        <i class="fas fa-clock me-1"></i>
+                        Disponibil 8:00 - 20:00
+                    </span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleScenario(element) {
+            const details = element.querySelector('.scenario-details');
+            if (details) {
+                if (details.style.display === 'none') {
+                    details.style.display = 'block';
+                    element.style.backgroundColor = '#f8f9fa';
+                } else {
+                    details.style.display = 'none';
+                    element.style.backgroundColor = '';
+                }
+            }
+        }
+
+        // Smooth scroll pentru linkurile interne
+        document.addEventListener('DOMContentLoaded', function() {
+            const links = document.querySelectorAll('a[href^="#"]');
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+
+        // Adaugă efect de highlight la căutare
+        function highlightSearch() {
+            const searchElements = document.querySelectorAll('.search-highlight');
+            searchElements.forEach(element => {
+                element.style.transition = 'all 0.3s ease';
+                element.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#ffc107';
+                    this.style.transform = 'scale(1.05)';
+                });
+                element.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '#fff3cd';
+                    this.style.transform = 'scale(1)';
+                });
+            });
+        }
+
+        highlightSearch();
+    </script>
+</body>
+</html>

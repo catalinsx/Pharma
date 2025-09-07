@@ -14,28 +14,47 @@ namespace pharma.Controllers
             _pharmaContext = pharmaContext;
         }
 
-        public IActionResult Index(string? search)
+        public async Task<IActionResult> Index(string? search, int page = 1, int pageSize = 20)
         {
             var pacienti = _pharmaContext.Pacienti
                 .Include(p => p.PacientMedicamente)
-                .ThenInclude(pm => pm.Medicament)
+                    .ThenInclude(pm => pm.Medicament)
                 .Include(p => p.Retete)
-                .ThenInclude(r => r.medicament)
+                    .ThenInclude(r => r.medicament)
                 .AsQueryable();
 
+            // 🔍 Căutare
             if (!string.IsNullOrWhiteSpace(search))
             {
-                search = search.ToLower();
+                var searchTerm = search.ToLower();
                 pacienti = pacienti.Where(p =>
-                    p.Nume.ToLower().Contains(search) ||
-                    p.Prenume.ToLower().Contains(search) ||
-                    (p.CNP != null && p.CNP.Contains(search)) ||
-                    (p.NrTelefon != null && p.NrTelefon.Contains(search)));
+                    p.Nume.ToLower().Contains(searchTerm) ||
+                    p.Prenume.ToLower().Contains(searchTerm) ||
+                    (p.CNP != null && p.CNP.Contains(searchTerm)) ||
+                    (p.NrTelefon != null && p.NrTelefon.Contains(searchTerm)));
             }
 
-            var rezultate = pacienti.OrderBy(p => p.Nume).ThenBy(p => p.Prenume).ToList();
+            // 📊 Număr total + paginare
+            var totalItems = await pacienti.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            var rezultate = await pacienti
+                .OrderBy(p => p.Nume)
+                .ThenBy(p => p.Prenume)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Info pentru View
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalItems = totalItems;
+            ViewBag.PageSize = pageSize;
+            ViewBag.Search = search;
+
             return View(rezultate);
         }
+
 
         [HttpGet]
         public IActionResult Create()
